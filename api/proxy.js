@@ -85,19 +85,22 @@ export default async function handler(req, res) {
 
           const contentType = response.headers.get('content-type') || 'application/octet-stream';
           
+          let arrayBuffer;
+          
           // Check if it's an HTML page (Google Drive error page)
           if (contentType.includes('text/html')) {
             const text = await response.text();
-            if (text.includes('Google Drive') || text.includes('Sign in') || text.includes('access denied')) {
-              console.log('Got HTML response, trying next URL...');
-              lastError = 'HTML response received (likely access denied)';
+            if (text.includes('Google Drive') || text.includes('Sign in') || text.includes('access denied') || text.includes('to continue to Google Drive')) {
+              console.log('Got HTML response (sign-in page), trying next URL...');
+              lastError = 'Authentication required - file requires Google Drive sign-in';
               continue;
             }
-            // If it's HTML but not a Google Drive error, treat as success
+            // If it's HTML but not a Google Drive error, convert back to arrayBuffer
+            arrayBuffer = new TextEncoder().encode(text).buffer;
+          } else {
+            // Get the file data for non-HTML content
+            arrayBuffer = await response.arrayBuffer();
           }
-
-          // Get the file data
-          const arrayBuffer = await response.arrayBuffer();
           
           if (arrayBuffer.byteLength === 0) {
             console.log('Empty response, trying next URL...');
