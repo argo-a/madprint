@@ -309,6 +309,7 @@
 
     <script>
         let csvData = [];
+        let downloadedFiles = new Map(); // Map of trackingNumber -> array of file info
         
         // File upload handling
         document.getElementById('csvFile').addEventListener('change', handleFileUpload);
@@ -353,12 +354,113 @@
                     updateStats();
                     document.getElementById('statsSection').style.display = 'block';
                     document.getElementById('searchSection').style.display = 'block';
-                    document.getElementById('trackingInput').focus();
+                    
+                    // Start bulk download process
+                    startBulkDownload();
                 },
                 error: function(error) {
                     uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
                 }
             });
+        }
+
+        async function startBulkDownload() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Show download progress
+            uploadStatus.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div style="color: #667eea; font-weight: bold; margin-bottom: 10px;">
+                        🚀 Downloading all Google Drive files...
+                    </div>
+                    <div style="color: #666; font-size: 0.9rem;">
+                        This may take a few minutes depending on file count and sizes
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/download-files', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ csvData: csvData })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Store downloaded files info
+                    downloadedFiles.clear();
+                    result.files.forEach(file => {
+                        if (!downloadedFiles.has(file.trackingNumber)) {
+                            downloadedFiles.set(file.trackingNumber, []);
+                        }
+                        downloadedFiles.get(file.trackingNumber).push(file);
+                    });
+
+                    // Show success message with download stats
+                    uploadStatus.innerHTML = `
+                        <div class="success-message">
+                            ✅ Bulk download complete!<br>
+                            📊 ${result.successful}/${result.total} files downloaded successfully
+                            ${result.failed > 0 ? `<br>⚠️ ${result.failed} files failed to download` : ''}
+                        </div>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <button onclick="clearDownloads()" style="
+                                background: #dc3545;
+                                color: white;
+                                border: none;
+                                padding: 8px 16px;
+                                border-radius: 20px;
+                                font-size: 0.9rem;
+                                cursor: pointer;
+                                transition: background 0.3s ease;
+                            " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
+                                🗑️ Clear Downloaded Files
+                            </button>
+                        </div>
+                    `;
+
+                    // Enable search
+                    document.getElementById('trackingInput').focus();
+                } else {
+                    uploadStatus.innerHTML = `<div class="error-message">❌ Bulk download failed: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Bulk download error:', error);
+                uploadStatus.innerHTML = `<div class="error-message">❌ Bulk download failed: ${error.message}</div>`;
+            }
+        }
+
+        async function clearDownloads() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            try {
+                uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Clearing downloaded files...</div>';
+                
+                const response = await fetch('/api/clear-downloads', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    downloadedFiles.clear();
+                    uploadStatus.innerHTML = `
+                        <div class="success-message">
+                            ✅ Cleared ${result.deletedCount} files (${result.totalSizeMB} MB)
+                        </div>
+                    `;
+                } else {
+                    uploadStatus.innerHTML = `<div class="error-message">❌ Failed to clear files: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Clear downloads error:', error);
+                uploadStatus.innerHTML = `<div class="error-message">❌ Failed to clear files: ${error.message}</div>`;
+            }
         }
 
         function updateStats() {
@@ -440,25 +542,173 @@
                     </div>
                 `;
             } else {
+                // Check if we have downloaded files for this tracking number
+                const localFiles = downloadedFiles.get(trackingNumber) || [];
+                
                 html += `<div class="images-grid">`;
                 imageUrls.forEach((url, index) => {
-                    const directUrl = convertToDirectImageUrl(url);
-                    html += `
-                        <div class="image-container">
-                            <div class="image-number">Image ${index + 1}</div>
-                            <img src="${directUrl}" alt="Product Image ${index + 1}" 
-                                 onload="showImageWithOptions(this, '${url}', ${index})" 
-                                 onerror="handleImageError(this, '${url}', ${index})"
-                                 style="opacity:0; transition: opacity 0.3s ease;"
-                                 data-original-url="${url}">
-                        </div>
-                    `;
+                    // Try to find a locally downloaded file for this URL
+                    const fileId = extractFileId(url);
+                    const localFile = localFiles.find(f => f.fileId === fileId);
+                    
+                    if (localFile) {
+                        // Display from local server
+                        const localUrl = `/api/serve-file?fileName=${encodeURIComponent(localFile.fileName)}`;
+                        html += `
+                            <div class="image-container">
+                                <div class="image-number">Image ${index + 1}</div>
+                                ${displayLocalFile(localFile, localUrl, index, url)}
+                            </div>
+                        `;
+                    } else {
+                        // Fallback to direct download attempt
+                        const directUrl = convertToDirectImageUrl(url);
+                        html += `
+                            <div class="image-container">
+                                <div class="image-number">Image ${index + 1}</div>
+                                <img src="${directUrl}" alt="Product Image ${index + 1}" 
+                                     onload="showImageWithOptions(this, '${url}', ${index})" 
+                                     onerror="handleImageError(this, '${url}', ${index})"
+                                     style="opacity:0; transition: opacity 0.3s ease;"
+                                     data-original-url="${url}">
+                            </div>
+                        `;
+                    }
                 });
                 html += `</div>`;
             }
 
             html += `</div>`;
             resultsSection.innerHTML = html;
+        }
+
+        function extractFileId(driveUrl) {
+            const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            return fileIdMatch ? fileIdMatch[1] : null;
+        }
+
+        function displayLocalFile(fileInfo, localUrl, index, originalUrl) {
+            const fileSizeText = fileInfo.fileSize ? ` (${(fileInfo.fileSize / 1024 / 1024).toFixed(1)} MB)` : '';
+            
+            if (fileInfo.mimeType && fileInfo.mimeType.includes('pdf')) {
+                // Display PDF
+                return `
+                    <div style="position: relative; background: #f8f9fa; border-radius: 10px; overflow: hidden;">
+                        <div style="
+                            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                            color: white;
+                            padding: 10px;
+                            text-align: center;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                        ">
+                            ✅ Loaded from Server Cache${fileSizeText}
+                        </div>
+                        <object data="${localUrl}" type="application/pdf" width="100%" height="500">
+                            <embed src="${localUrl}" type="application/pdf" width="100%" height="500">
+                                <iframe src="${localUrl}" width="100%" height="500" style="border: none;">
+                                    <div style="padding: 40px; text-align: center;">
+                                        <div style="font-size: 2rem; margin-bottom: 15px;">📄</div>
+                                        <div style="color: #667eea; font-weight: bold; margin-bottom: 10px;">
+                                            PDF Available from Server
+                                        </div>
+                                        <div style="margin-bottom: 20px;">
+                                            <a href="${localUrl}" download style="
+                                                background: #667eea;
+                                                color: white;
+                                                padding: 12px 24px;
+                                                border-radius: 25px;
+                                                text-decoration: none;
+                                                display: inline-block;
+                                                margin: 5px;
+                                            ">💾 Download PDF</a>
+                                            <a href="${originalUrl}" target="_blank" style="
+                                                background: #28a745;
+                                                color: white;
+                                                padding: 12px 24px;
+                                                border-radius: 25px;
+                                                text-decoration: none;
+                                                display: inline-block;
+                                                margin: 5px;
+                                            ">🔗 Open in Drive</a>
+                                        </div>
+                                    </div>
+                                </iframe>
+                            </embed>
+                        </object>
+                    </div>
+                `;
+            } else {
+                // Display Image
+                return `
+                    <div style="position: relative; background: #f8f9fa; border-radius: 10px; overflow: hidden; text-align: center; padding: 10px;">
+                        <div style="
+                            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                            color: white;
+                            padding: 8px;
+                            border-radius: 5px;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                            font-size: 0.9rem;
+                        ">
+                            ✅ Loaded from Server Cache${fileSizeText}
+                        </div>
+                        <img src="${localUrl}" alt="Product Image ${index + 1}" 
+                             style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2);">
+                        <div style="margin-top: 15px; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <div style="font-weight: bold; color: #667eea; margin-bottom: 8px; font-size: 0.9rem;">Image URL:</div>
+                            <div style="background: #f8f9fa; padding: 8px; border-radius: 5px; font-family: monospace; font-size: 0.8rem; word-break: break-all; margin-bottom: 10px; color: #666;">
+                                ${originalUrl}
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <a href="${localUrl}" download="image_${index + 1}" style="
+                                    background: #667eea;
+                                    color: white;
+                                    padding: 8px 16px;
+                                    border-radius: 20px;
+                                    text-decoration: none;
+                                    font-size: 0.9rem;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    transition: background 0.3s ease;
+                                " onmouseover="this.style.background='#5a6fd8'" onmouseout="this.style.background='#667eea'">
+                                    💾 Download
+                                </a>
+                                <a href="${originalUrl}" target="_blank" style="
+                                    background: #28a745;
+                                    color: white;
+                                    padding: 8px 16px;
+                                    border-radius: 20px;
+                                    text-decoration: none;
+                                    font-size: 0.9rem;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    transition: background 0.3s ease;
+                                " onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
+                                    🔗 Open in Drive
+                                </a>
+                                <button onclick="copyToClipboard('${originalUrl}')" style="
+                                    background: #6c757d;
+                                    color: white;
+                                    padding: 8px 16px;
+                                    border: none;
+                                    border-radius: 20px;
+                                    font-size: 0.9rem;
+                                    cursor: pointer;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    transition: background 0.3s ease;
+                                " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+                                    📋 Copy URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
         function extractGoogleDriveUrls(notes) {
