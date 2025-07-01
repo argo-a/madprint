@@ -750,10 +750,10 @@
             if (fileIdMatch) {
                 const fileId = fileIdMatch[1];
                 
-                // Try alternative image formats first using our proxy
+                // Try alternative image formats first
                 const alternatives = [
-                    `/api/proxy?url=${encodeURIComponent(`https://lh3.googleusercontent.com/d/${fileId}=w1000`)}`,
-                    `/api/proxy?url=${encodeURIComponent(`https://drive.google.com/uc?export=view&id=${fileId}`)}`
+                    `https://lh3.googleusercontent.com/d/${fileId}=w1000`,
+                    `https://drive.google.com/uc?export=view&id=${fileId}`
                 ];
 
                 let attemptIndex = parseInt(imgElement.dataset.attempt || 0);
@@ -764,10 +764,81 @@
                     return;
                 }
                 
-                // If all image attempts failed, try downloading the file via proxy
+                // If all direct attempts failed, show protected file message
                 const container = imgElement.parentElement;
-                downloadAndDisplayFileViaProxy(fileId, originalUrl, container, index);
+                showProtectedFileMessage(container, originalUrl, index);
             }
+        }
+
+        function showProtectedFileMessage(container, originalUrl, index) {
+            container.innerHTML = `
+                <div class="image-number">Image ${index + 1}</div>
+                <div style="
+                    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+                    color: white;
+                    padding: 30px 20px;
+                    border-radius: 10px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🔒</div>
+                    <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
+                        Protected File - Authentication Required
+                    </div>
+                    <div style="opacity: 0.9; margin-bottom: 10px; font-size: 0.9rem;">
+                        This file requires Google Drive authentication to view
+                    </div>
+                    <div style="opacity: 0.8; margin-bottom: 20px; font-size: 0.8rem;">
+                        Click "Open in Drive" below to view the file with your Google account
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <div style="font-weight: bold; color: #667eea; margin-bottom: 15px; font-size: 1rem; text-align: center;">
+                        📋 How to View This Protected File:
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
+                        <div style="margin-bottom: 10px;"><strong>Step 1:</strong> Click "Open in Drive" below</div>
+                        <div style="margin-bottom: 10px;"><strong>Step 2:</strong> Sign in with your Google account if prompted</div>
+                        <div style="margin-bottom: 10px;"><strong>Step 3:</strong> View or download the file directly from Google Drive</div>
+                        <div><strong>Note:</strong> You must have permission to access this file</div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <a href="${originalUrl}" target="_blank" style="
+                            background: #4285f4;
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 25px;
+                            text-decoration: none;
+                            font-size: 1rem;
+                            font-weight: bold;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            transition: background 0.3s ease;
+                            box-shadow: 0 2px 5px rgba(66, 133, 244, 0.3);
+                        " onmouseover="this.style.background='#3367d6'" onmouseout="this.style.background='#4285f4'">
+                            🔗 Open in Google Drive
+                        </a>
+                        <button onclick="copyToClipboard('${originalUrl}')" style="
+                            background: #6c757d;
+                            color: white;
+                            padding: 12px 24px;
+                            border: none;
+                            border-radius: 25px;
+                            font-size: 1rem;
+                            cursor: pointer;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            transition: background 0.3s ease;
+                        " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+                            📋 Copy Link
+                        </button>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 0.9rem; color: #1976d2;">
+                        💡 <strong>Tip:</strong> If you can't access the file, contact the file owner to request permission.
+                    </div>
+                </div>
+            `;
         }
 
         // New function to use Chrome extension
