@@ -90,11 +90,22 @@ export default async function handler(req, res) {
           // Check if it's an HTML page (Google Drive error page)
           if (contentType.includes('text/html')) {
             const text = await response.text();
-            if (text.includes('Google Drive') || text.includes('Sign in') || text.includes('access denied') || text.includes('to continue to Google Drive')) {
-              console.log('Got HTML response (sign-in page), trying next URL...');
+            console.log('Got HTML response, checking content...');
+            
+            // Check for various Google Drive authentication/error indicators
+            if (text.includes('Sign in') || 
+                text.includes('to continue to Google Drive') ||
+                text.includes('Google Drive') && text.includes('authentication') ||
+                text.includes('access denied') ||
+                text.includes('permission') ||
+                text.includes('Google Account') ||
+                text.includes('Email or phone')) {
+              
+              console.log('Detected authentication page, trying next URL...');
               lastError = 'Authentication required - file requires Google Drive sign-in';
               continue;
             }
+            
             // If it's HTML but not a Google Drive error, convert back to arrayBuffer
             arrayBuffer = new TextEncoder().encode(text).buffer;
           } else {
