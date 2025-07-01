@@ -259,10 +259,10 @@
         </div>
         
         <div class="content">
-            <!-- Server Status Banner -->
-            <div id="serverStatus" style="display: block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 5px;">🚀 Server-Side CORS Bypass Active</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">Google Drive files will be loaded through our secure proxy server</div>
+            <!-- Browser Status Banner -->
+            <div id="browserStatus" style="display: block; background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                <div style="font-weight: bold; margin-bottom: 5px;">🔓 Browser Session Access Active</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Using your Google login session to access protected files directly</div>
             </div>
 
             <div class="upload-section" id="uploadSection">
@@ -476,8 +476,8 @@
             const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
             if (fileIdMatch) {
                 const fileId = fileIdMatch[1];
-                // Use our proxy to fetch the thumbnail
-                return `/api/proxy?url=${encodeURIComponent(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`)}`;
+                // Try direct browser access first (uses your Google login session)
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return driveUrl;
         }
