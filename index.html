@@ -476,8 +476,8 @@
             const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
             if (fileIdMatch) {
                 const fileId = fileIdMatch[1];
-                // Try direct browser access first (uses your Google login session)
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                // Use direct download URL with user session (like /u/6)
+                return `https://drive.usercontent.google.com/u/6/uc?id=${fileId}&export=download`;
             }
             return driveUrl;
         }
@@ -1060,7 +1060,7 @@
             // Make the image visible
             imgElement.style.opacity = 1;
             
-            // Add the URL and download options below the image
+            // Add success banner and download options below the image
             const container = imgElement.parentElement;
             const existingOptions = container.querySelector('.image-options');
             
@@ -1079,6 +1079,18 @@
                 `;
                 
                 optionsDiv.innerHTML = `
+                    <div style="
+                        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                        color: white;
+                        padding: 8px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                        font-size: 0.9rem;
+                        text-align: center;
+                    ">
+                        ✅ Successfully loaded via direct download URL
+                    </div>
                     <div style="font-weight: bold; color: #667eea; margin-bottom: 8px; font-size: 0.9rem;">Image URL:</div>
                     <div style="background: #f8f9fa; padding: 8px; border-radius: 5px; font-family: monospace; font-size: 0.8rem; word-break: break-all; margin-bottom: 10px; color: #666;">
                         ${originalUrl}
