@@ -1,65 +1,111 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const DOWNLOADS_DIR = path.join(__dirname, '..', 'downloads');
-
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const { fileName } = req.query;
+        const { fileId, downloadUrl } = req.query;
         
-        if (!fileName) {
-            return res.status(400).json({ error: 'fileName parameter required' });
+        if (!fileId) {
+            return res.status(400).json({ error: 'fileId parameter required' });
         }
 
-        // Security: Only allow alphanumeric, underscore, dash, and dot
-        if (!/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
-            return res.status(400).json({ error: 'Invalid fileName' });
+        // Security: Only allow alphanumeric, underscore, dash
+        if (!/^[a-zA-Z0-9_-]+$/.test(fileId)) {
+            return res.status(400).json({ error: 'Invalid fileId' });
         }
 
-        const filePath = path.join(DOWNLOADS_DIR, fileName);
+        let targetUrl = downloadUrl;
         
-        // Check if file exists
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: 'File not found' });
+        // If no downloadUrl provided, try to construct one
+        if (!targetUrl) {
+            const downloadUrls = [
+                `https://drive.usercontent.google.com/u/0/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/1/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/2/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/4/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/5/uc?id=${fileId}&export=download`,
+                `https://drive.usercontent.google.com/u/6/uc?id=${fileId}&export=download`,
+                `https://drive.google.com/uc?export=download&id=${fileId}`,
+                `https://drive.google.com/uc?id=${fileId}&export=download`
+            ];
+
+            // Try to find a working URL
+            for (const url of downloadUrls) {
+                try {
+                    const testResponse = await fetch(url, {
+                        method: 'HEAD',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                        }
+                    });
+                    
+                    if (testResponse.ok && !testResponse.headers.get('content-type')?.includes('text/html')) {
+                        targetUrl = url;
+                        break;
+                    }
+                } catch (err) {
+                    continue;
+                }
+            }
         }
 
-        // Get file stats
-        const stats = fs.statSync(filePath);
-        const fileExtension = path.extname(fileName).toLowerCase();
-        
-        // Set appropriate content type
-        let contentType = 'application/octet-stream';
-        if (fileExtension === '.pdf') {
-            contentType = 'application/pdf';
-        } else if (fileExtension === '.png') {
-            contentType = 'image/png';
-        } else if (fileExtension === '.jpg' || fileExtension === '.jpeg') {
-            contentType = 'image/jpeg';
-        } else if (fileExtension === '.gif') {
-            contentType = 'image/gif';
-        } else if (fileExtension === '.webp') {
-            contentType = 'image/webp';
+        if (!targetUrl) {
+            return res.status(404).json({ error: 'File not accessible' });
+        }
+
+        console.log(`Proxying file ${fileId} from: ${targetUrl}`);
+
+        // Fetch the file from Google Drive
+        const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'Failed to fetch file from Google Drive' });
+        }
+
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        const contentLength = response.headers.get('content-length');
+
+        // Skip HTML responses (sign-in pages)
+        if (contentType.includes('text/html')) {
+            return res.status(403).json({ error: 'File requires authentication' });
         }
 
         // Set headers
         res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Length', stats.size);
-        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+        if (contentLength) {
+            res.setHeader('Content-Length', contentLength);
+        }
+        res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+        res.setHeader('Access-Control-Allow-Origin', '*');
         
         // Stream the file
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
+        const reader = response.body.getReader();
+        
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                res.write(value);
+            }
+            res.end();
+        } catch (streamError) {
+            console.error('Error streaming file:', streamError);
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Error streaming file' });
+            }
+        }
         
     } catch (error) {
         console.error('Error serving file:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 }

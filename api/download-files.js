@@ -1,16 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Create downloads directory if it doesn't exist
-const DOWNLOADS_DIR = path.join(__dirname, '..', 'downloads');
-if (!fs.existsSync(DOWNLOADS_DIR)) {
-    fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
-}
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -23,7 +10,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid CSV data' });
         }
 
-        console.log(`Starting bulk download for ${csvData.length} orders`);
+        console.log(`Processing ${csvData.length} orders for file analysis`);
         
         const results = {
             total: 0,
@@ -32,7 +19,7 @@ export default async function handler(req, res) {
             files: []
         };
 
-        // Extract all Google Drive URLs from CSV
+        // Extract all Google Drive URLs from CSV and test accessibility
         for (const order of csvData) {
             if (!order.notes) continue;
             
@@ -49,22 +36,22 @@ export default async function handler(req, res) {
                         continue;
                     }
 
-                    const downloadResult = await downloadFile(fileId, order.tracking_number);
+                    const testResult = await testFileAccessibility(fileId, order.tracking_number);
                     
-                    if (downloadResult.success) {
+                    if (testResult.success) {
                         results.successful++;
                         results.files.push({
                             trackingNumber: order.tracking_number,
                             fileId: fileId,
                             originalUrl: url,
-                            localPath: downloadResult.localPath,
-                            fileName: downloadResult.fileName,
-                            fileSize: downloadResult.fileSize,
-                            mimeType: downloadResult.mimeType
+                            fileName: `${order.tracking_number}_${fileId}${testResult.extension}`,
+                            fileSize: testResult.fileSize,
+                            mimeType: testResult.mimeType,
+                            downloadUrl: testResult.downloadUrl
                         });
                     } else {
                         results.failed++;
-                        console.log(`Failed to download ${fileId}:`, downloadResult.error);
+                        console.log(`Failed to access ${fileId}:`, testResult.error);
                     }
                 } catch (error) {
                     results.failed++;
@@ -73,12 +60,12 @@ export default async function handler(req, res) {
             }
         }
 
-        console.log(`Bulk download complete: ${results.successful}/${results.total} successful`);
+        console.log(`File analysis complete: ${results.successful}/${results.total} accessible`);
         
         res.json(results);
         
     } catch (error) {
-        console.error('Bulk download error:', error);
+        console.error('File analysis error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 }
@@ -97,9 +84,9 @@ function extractFileId(driveUrl) {
     return fileIdMatch ? fileIdMatch[1] : null;
 }
 
-async function downloadFile(fileId, trackingNumber) {
+async function testFileAccessibility(fileId, trackingNumber) {
     try {
-        // Try multiple download URLs
+        // Try multiple download URLs to test accessibility
         const downloadUrls = [
             `https://drive.usercontent.google.com/u/0/uc?id=${fileId}&export=download`,
             `https://drive.usercontent.google.com/u/1/uc?id=${fileId}&export=download`,
@@ -117,10 +104,11 @@ async function downloadFile(fileId, trackingNumber) {
 
         for (const url of downloadUrls) {
             try {
-                console.log(`Trying to download ${fileId} from: ${url}`);
+                console.log(`Testing accessibility of ${fileId} from: ${url}`);
                 
+                // Use HEAD request to test without downloading full file
                 response = await fetch(url, {
-                    method: 'GET',
+                    method: 'HEAD',
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                     }
@@ -139,19 +127,19 @@ async function downloadFile(fileId, trackingNumber) {
                     break;
                 }
             } catch (err) {
-                console.log(`Failed to fetch from ${url}:`, err.message);
+                console.log(`Failed to test ${url}:`, err.message);
                 continue;
             }
         }
 
         if (!response || !response.ok) {
-            return { success: false, error: 'Could not download file from any URL' };
+            return { success: false, error: 'Could not access file from any URL' };
         }
 
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
         const contentLength = response.headers.get('content-length');
         
-        console.log(`Successfully downloading ${fileId} from ${successUrl}, Content-Type: ${contentType}, Size: ${contentLength}`);
+        console.log(`File ${fileId} is accessible from ${successUrl}, Content-Type: ${contentType}, Size: ${contentLength}`);
 
         // Get file extension based on content type
         let extension = '.bin';
@@ -169,32 +157,16 @@ async function downloadFile(fileId, trackingNumber) {
             extension = '.png'; // Default for unknown image types
         }
 
-        // Create filename: trackingNumber_fileId.extension
-        const fileName = `${trackingNumber}_${fileId}${extension}`;
-        const localPath = path.join(DOWNLOADS_DIR, fileName);
-
-        // Download and save file
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        if (buffer.length === 0) {
-            return { success: false, error: 'Downloaded file is empty' };
-        }
-
-        fs.writeFileSync(localPath, buffer);
-        
-        console.log(`Successfully saved ${fileName} (${buffer.length} bytes)`);
-
         return {
             success: true,
-            localPath: localPath,
-            fileName: fileName,
-            fileSize: buffer.length,
-            mimeType: contentType
+            extension: extension,
+            fileSize: parseInt(contentLength) || 0,
+            mimeType: contentType,
+            downloadUrl: successUrl
         };
 
     } catch (error) {
-        console.error(`Error downloading file ${fileId}:`, error);
+        console.error(`Error testing file ${fileId}:`, error);
         return { success: false, error: error.message };
     }
 }

@@ -367,15 +367,15 @@
         async function startBulkDownload() {
             const uploadStatus = document.getElementById('uploadStatus');
             
-            // Show download progress
+            // Show analysis progress
             uploadStatus.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
                     <div style="color: #667eea; font-weight: bold; margin-bottom: 10px;">
-                        🚀 Downloading all Google Drive files...
+                        🔍 Analyzing Google Drive file accessibility...
                     </div>
                     <div style="color: #666; font-size: 0.9rem;">
-                        This may take a few minutes depending on file count and sizes
+                        Testing which files can be accessed for on-demand serving
                     </div>
                 </div>
             `;
@@ -392,7 +392,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Store downloaded files info
+                    // Store accessible files info
                     downloadedFiles.clear();
                     result.files.forEach(file => {
                         if (!downloadedFiles.has(file.trackingNumber)) {
@@ -401,16 +401,16 @@
                         downloadedFiles.get(file.trackingNumber).push(file);
                     });
 
-                    // Show success message with download stats
+                    // Show success message with analysis stats
                     uploadStatus.innerHTML = `
                         <div class="success-message">
-                            ✅ Bulk download complete!<br>
-                            📊 ${result.successful}/${result.total} files downloaded successfully
-                            ${result.failed > 0 ? `<br>⚠️ ${result.failed} files failed to download` : ''}
+                            ✅ File analysis complete!<br>
+                            📊 ${result.successful}/${result.total} files are accessible for on-demand serving
+                            ${result.failed > 0 ? `<br>⚠️ ${result.failed} files require authentication` : ''}
                         </div>
                         <div style="margin-top: 10px; text-align: center;">
                             <button onclick="clearDownloads()" style="
-                                background: #dc3545;
+                                background: #6c757d;
                                 color: white;
                                 border: none;
                                 padding: 8px 16px;
@@ -418,8 +418,8 @@
                                 font-size: 0.9rem;
                                 cursor: pointer;
                                 transition: background 0.3s ease;
-                            " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
-                                🗑️ Clear Downloaded Files
+                            " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+                                🔄 Clear Cache
                             </button>
                         </div>
                     `;
@@ -427,11 +427,11 @@
                     // Enable search
                     document.getElementById('trackingInput').focus();
                 } else {
-                    uploadStatus.innerHTML = `<div class="error-message">❌ Bulk download failed: ${result.error}</div>`;
+                    uploadStatus.innerHTML = `<div class="error-message">❌ File analysis failed: ${result.error}</div>`;
                 }
             } catch (error) {
-                console.error('Bulk download error:', error);
-                uploadStatus.innerHTML = `<div class="error-message">❌ Bulk download failed: ${error.message}</div>`;
+                console.error('File analysis error:', error);
+                uploadStatus.innerHTML = `<div class="error-message">❌ File analysis failed: ${error.message}</div>`;
             }
         }
 
@@ -552,8 +552,8 @@
                     const localFile = localFiles.find(f => f.fileId === fileId);
                     
                     if (localFile) {
-                        // Display from local server
-                        const localUrl = `/api/serve-file?fileName=${encodeURIComponent(localFile.fileName)}`;
+                        // Display from proxy server
+                        const localUrl = `/api/serve-file?fileId=${encodeURIComponent(localFile.fileId)}&downloadUrl=${encodeURIComponent(localFile.downloadUrl)}`;
                         html += `
                             <div class="image-container">
                                 <div class="image-number">Image ${index + 1}</div>
