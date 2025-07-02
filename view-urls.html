@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Google Drive URLs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -171,6 +172,85 @@
         .back-btn:hover {
             background: #5a6268;
         }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-section.active {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -183,10 +263,22 @@
         <div class="content">
             <a href="/" class="back-btn">← Back to Main App</a>
             
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📄 Upload CSV File</h3>
+                <p>Select your orders CSV file to view all Google Drive URLs</p>
+                <br>
+                <input type="file" id="csvFile" class="file-input" accept=".csv">
+                <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                    Choose CSV File
+                </button>
+                <div id="uploadStatus"></div>
+            </div>
+            
             <div id="urlsContainer">
                 <div class="no-data">
                     <h3>No URLs to display</h3>
-                    <p>Please upload a CSV file first from the main page.</p>
+                    <p>Upload a CSV file above to see all Google Drive URLs.</p>
                 </div>
             </div>
         </div>
@@ -311,6 +403,106 @@
                 console.error('Failed to copy:', err);
                 alert('Failed to copy to clipboard');
             });
+        }
+
+        // CSV processing variables
+        let csvData = [];
+
+        // File upload handling
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadSection = document.getElementById('uploadSection');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing CSV file...</div>';
+            uploadSection.classList.add('active');
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                delimitersToGuess: [',', '\t', '|', ';'],
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        uploadStatus.innerHTML = `<div class="error-message">Error parsing CSV: ${results.errors[0].message}</div>`;
+                        return;
+                    }
+
+                    // Clean headers by removing whitespace
+                    const cleanData = results.data.map(row => {
+                        const cleanRow = {};
+                        Object.keys(row).forEach(key => {
+                            const cleanKey = key.trim();
+                            cleanRow[cleanKey] = row[key];
+                        });
+                        return cleanRow;
+                    });
+
+                    csvData = cleanData;
+                    
+                    // Extract URLs and process
+                    processCSVData();
+                },
+                error: function(error) {
+                    uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
+                }
+            });
+        }
+
+        function processCSVData() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                uploadStatus.innerHTML = `<div class="error-message">❌ No Google Drive URLs found in the CSV file</div>`;
+                showNoData();
+                return;
+            }
+
+            // Store in localStorage
+            localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
+            
+            // Show success message
+            uploadStatus.innerHTML = `<div class="success-message">✅ Successfully processed ${csvData.length} orders and found ${allUrls.length} Google Drive URLs!</div>`;
+            
+            // Display the URLs
+            displayUrls(allUrls);
+        }
+
+        function extractGoogleDriveUrls(notes) {
+            if (!notes) return [];
+            
+            // Regular expression to match Google Drive URLs
+            const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g;
+            const matches = notes.match(driveUrlRegex);
+            
+            return matches || [];
+        }
+
+        function extractFileId(driveUrl) {
+            const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            return fileIdMatch ? fileIdMatch[1] : null;
         }
 
         // Load URLs when page loads
