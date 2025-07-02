@@ -355,6 +355,9 @@
                     document.getElementById('statsSection').style.display = 'block';
                     document.getElementById('searchSection').style.display = 'block';
                     
+                    // Add "View All URLs" button
+                    addViewAllUrlsButton();
+                    
                     // Start bulk download process
                     startBulkDownload();
                 },
@@ -1851,6 +1854,367 @@
                 trackingInput.focus();
             }
         });
+
+        // Add "View All URLs" button functionality
+        function addViewAllUrlsButton() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length > 0) {
+                // Store URLs in localStorage for the new page
+                localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
+                
+                // Add the button to upload status
+                const currentContent = uploadStatus.innerHTML;
+                uploadStatus.innerHTML = currentContent + `
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button onclick="openUrlsPage()" style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 25px;
+                            font-size: 1rem;
+                            cursor: pointer;
+                            margin: 5px;
+                            transition: transform 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            📋 View All URLs (${allUrls.length} found)
+                        </button>
+                        <button onclick="openAllUrls()" style="
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 25px;
+                            font-size: 1rem;
+                            cursor: pointer;
+                            margin: 5px;
+                            transition: transform 0.3s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            🔗 Open All URLs
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function openUrlsPage() {
+            // Open the view-urls.html page in a new tab
+            window.open('/view-urls.html', '_blank');
+        }
+
+        function showAllUrls() {
+            const resultsSection = document.getElementById('resultsSection');
+            
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                resultsSection.innerHTML = `
+                    <div class="error-message">
+                        ❌ No Google Drive URLs found in the CSV file
+                    </div>
+                `;
+                return;
+            }
+
+            // Group URLs by tracking number
+            const urlsByTracking = {};
+            allUrls.forEach(item => {
+                if (!urlsByTracking[item.trackingNumber]) {
+                    urlsByTracking[item.trackingNumber] = [];
+                }
+                urlsByTracking[item.trackingNumber].push(item);
+            });
+
+            let html = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #333; margin-bottom: 15px;">📋 All Google Drive URLs (${allUrls.length} total)</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button onclick="openAllUrls()" style="
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                        ">🔗 Open All URLs</button>
+                        <button onclick="copyAllUrls()" style="
+                            background: #6c757d;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                        ">📋 Copy All URLs</button>
+                        <button onclick="exportUrlsList()" style="
+                            background: #17a2b8;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                        ">💾 Export as Text</button>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+            `;
+
+            // Display URLs grouped by tracking number
+            Object.keys(urlsByTracking).forEach(trackingNumber => {
+                const items = urlsByTracking[trackingNumber];
+                html += `
+                    <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h4 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+                            📦 Tracking: ${trackingNumber}
+                        </h4>
+                        <div style="margin-bottom: 10px; font-size: 0.9rem; color: #666;">
+                            Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''}
+                        </div>
+                `;
+
+                items.forEach((item, index) => {
+                    html += `
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid #667eea;">
+                            <div style="font-weight: bold; color: #333; margin-bottom: 8px;">File ${index + 1}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-bottom: 8px;">
+                                <strong>File ID:</strong> <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">${item.fileId}</code>
+                            </div>
+                            <div style="font-size: 0.8rem; word-break: break-all; background: #fff; padding: 8px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                                ${item.url}
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="${item.url}" target="_blank" style="
+                                    background: #4285f4;
+                                    color: white;
+                                    padding: 6px 12px;
+                                    border-radius: 15px;
+                                    text-decoration: none;
+                                    font-size: 0.8rem;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 4px;
+                                ">🔗 Open</a>
+                                <a href="https://drive.google.com/uc?export=download&id=${item.fileId}" target="_blank" style="
+                                    background: #28a745;
+                                    color: white;
+                                    padding: 6px 12px;
+                                    border-radius: 15px;
+                                    text-decoration: none;
+                                    font-size: 0.8rem;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 4px;
+                                ">💾 Download</a>
+                                <button onclick="copyToClipboard('${item.url}')" style="
+                                    background: #6c757d;
+                                    color: white;
+                                    padding: 6px 12px;
+                                    border: none;
+                                    border-radius: 15px;
+                                    cursor: pointer;
+                                    font-size: 0.8rem;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 4px;
+                                ">📋 Copy</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+            resultsSection.innerHTML = html;
+        }
+
+        function openAllUrls() {
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push(url);
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                alert('No Google Drive URLs found in the CSV file');
+                return;
+            }
+
+            // Warn user about opening many tabs
+            if (allUrls.length > 10) {
+                const confirmed = confirm(`This will open ${allUrls.length} new tabs. Are you sure you want to continue?`);
+                if (!confirmed) return;
+            }
+
+            // Open each URL in a new tab
+            allUrls.forEach((url, index) => {
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                }, index * 100); // Stagger the opening to avoid browser blocking
+            });
+        }
+
+        function copyAllUrls() {
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                alert('No Google Drive URLs found in the CSV file');
+                return;
+            }
+
+            // Format URLs for copying
+            let urlText = `Google Drive URLs (${allUrls.length} total)\n`;
+            urlText += '='.repeat(50) + '\n\n';
+
+            const urlsByTracking = {};
+            allUrls.forEach(item => {
+                if (!urlsByTracking[item.trackingNumber]) {
+                    urlsByTracking[item.trackingNumber] = [];
+                }
+                urlsByTracking[item.trackingNumber].push(item);
+            });
+
+            Object.keys(urlsByTracking).forEach(trackingNumber => {
+                const items = urlsByTracking[trackingNumber];
+                urlText += `📦 Tracking: ${trackingNumber} | Order: ${items[0].orderNumber}\n`;
+                items.forEach((item, index) => {
+                    urlText += `   ${index + 1}. ${item.url}\n`;
+                });
+                urlText += '\n';
+            });
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(urlText).then(() => {
+                alert(`✅ Copied ${allUrls.length} URLs to clipboard!`);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = urlText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert(`✅ Copied ${allUrls.length} URLs to clipboard!`);
+            });
+        }
+
+        function exportUrlsList() {
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                alert('No Google Drive URLs found in the CSV file');
+                return;
+            }
+
+            // Create detailed export text
+            let exportText = `Google Drive URLs Export\n`;
+            exportText += `Generated: ${new Date().toLocaleString()}\n`;
+            exportText += `Total URLs: ${allUrls.length}\n`;
+            exportText += '='.repeat(60) + '\n\n';
+
+            const urlsByTracking = {};
+            allUrls.forEach(item => {
+                if (!urlsByTracking[item.trackingNumber]) {
+                    urlsByTracking[item.trackingNumber] = [];
+                }
+                urlsByTracking[item.trackingNumber].push(item);
+            });
+
+            Object.keys(urlsByTracking).forEach(trackingNumber => {
+                const items = urlsByTracking[trackingNumber];
+                exportText += `TRACKING: ${trackingNumber}\n`;
+                exportText += `ORDER: ${items[0].orderNumber}\n`;
+                exportText += `FILES: ${items.length}\n`;
+                exportText += '-'.repeat(40) + '\n';
+                
+                items.forEach((item, index) => {
+                    exportText += `File ${index + 1}:\n`;
+                    exportText += `  File ID: ${item.fileId}\n`;
+                    exportText += `  URL: ${item.url}\n`;
+                    exportText += `  Direct Download: https://drive.google.com/uc?export=download&id=${item.fileId}\n\n`;
+                });
+                exportText += '\n';
+            });
+
+            // Create and download file
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `google-drive-urls-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
         // Check when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {

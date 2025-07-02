@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive CORS Bypass</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🔓</div>
+            <h1>Google Drive CORS Bypass</h1>
+            <div class="version">v1.0</div>
+        </div>
+        
+        <div class="status-section">
+            <div class="status-item">
+                <div class="status-label">Extension Status:</div>
+                <div class="status-value" id="extensionStatus">
+                    <span class="status-indicator active"></span>
+                    Active
+                </div>
+            </div>
+            
+            <div class="status-item">
+                <div class="status-label">Current Tab:</div>
+                <div class="status-value" id="tabStatus">
+                    <span class="status-indicator"></span>
+                    <span id="tabStatusText">Checking...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Bypasses CORS restrictions for Google Drive files</li>
+                <li>Automatically detects Google Drive URLs in web pages</li>
+                <li>Downloads files and displays them inline</li>
+                <li>Supports images and PDFs</li>
+            </ul>
+        </div>
+        
+        <div class="stats-section" id="statsSection" style="display: none;">
+            <h3>Session Stats:</h3>
+            <div class="stat-item">
+                <span class="stat-label">Files processed:</span>
+                <span class="stat-value" id="filesProcessed">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Success rate:</span>
+                <span class="stat-value" id="successRate">0%</span>
+            </div>
+        </div>
+        
+        <div class="actions-section">
+            <button id="toggleExtension" class="btn btn-primary">
+                <span id="toggleText">Disable Extension</span>
+            </button>
+            <button id="clearCache" class="btn btn-secondary">
+                Clear Cache
+            </button>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-text">
+                For use with Google Drive file embedding
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>
