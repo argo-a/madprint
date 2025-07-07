@@ -503,8 +503,8 @@
             // Show barcode processing info
             showBarcodeInfo(processingResult);
             
-            // Update the input field with processed value
-            document.getElementById('trackingInput').value = trackingNumber;
+            // Clear the input field for next scan
+            document.getElementById('trackingInput').value = '';
 
             // Search for the order
             const order = csvData.find(row => {
