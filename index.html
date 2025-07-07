@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaddPrints - Order Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+        }
+
+        .search-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: #218838;
+        }
+
+        .barcode-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #1976d2;
+            display: none;
+        }
+
+        .barcode-info.show {
+            display: block;
+        }
+
+        .stats-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tracking-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .order-number {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .image-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .image-link {
+            display: inline-block;
+            background: #4285f4;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .image-link:hover {
+            background: #3367d6;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .view-urls-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .view-urls-button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 MaddPrints Order Tracker</h1>
+            <p>Upload CSV and search by tracking number to find order images</p>
+        </div>
+        
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📄 Upload Orders CSV</h3>
+                <p>Select your orders CSV file to get started</p>
+                <br>
+                <input type="file" id="csvFile" class="file-input" accept=".csv">
+                <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                    Choose CSV File
+                </button>
+                <div id="uploadStatus"></div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-section" id="statsSection">
+                <h3>📊 CSV Statistics</h3>
+                <div id="statsContent"></div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section" id="searchSection">
+                <h3>🔍 Search by Tracking Number</h3>
+                <div class="search-box">
+                    <input type="text" id="trackingInput" class="search-input" 
+                           placeholder="Scan or enter tracking number..." 
+                           autocomplete="off">
+                    <button class="search-button" onclick="searchOrder()">Search</button>
+                </div>
+                <div id="barcodeInfo" class="barcode-info">
+                    <strong>Barcode Processing:</strong> <span id="barcodeDetails"></span>
+                </div>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">
+                    💡 Tip: Scan barcode or type tracking number and press Enter
+                </p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section"></div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = [];
+
+        // File upload handling
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+            document.getElementById('trackingInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchOrder();
+                }
+            });
+        });
+
+        // Smart barcode processing function
+        function processTrackingNumber(rawInput) {
+            const trimmedInput = rawInput.trim();
+            
+            // Rule 1: If starts with 1Z (UPS), always use full value
+            if (trimmedInput.startsWith('1Z')) {
+                return {
+                    processed: trimmedInput,
+                    action: 'kept_full',
+                    original: rawInput,
+                    removed: null
+                };
+            }
+            
+            // Rule 2: If very long (likely has prefix), remove first 8 digits
+            if (trimmedInput.length > 20) {
+                const processed = trimmedInput.substring(8);
+                const removed = trimmedInput.substring(0, 8);
+                return {
+                    processed: processed,
+                    action: 'removed_prefix',
+                    original: rawInput,
+                    removed: removed
+                };
+            }
+            
+            // Rule 3: Otherwise use as-is
+            return {
+                processed: trimmedInput,
+                action: 'kept_as_is',
+                original: rawInput,
+                removed: null
+            };
+        }
+
+        function showBarcodeInfo(processingResult) {
+            const barcodeInfo = document.getElementById('barcodeInfo');
+            const barcodeDetails = document.getElementById('barcodeDetails');
+            
+            if (processingResult.action === 'removed_prefix') {
+                barcodeDetails.innerHTML = `Removed prefix "${processingResult.removed}" from scanned barcode. Using: ${processingResult.processed}`;
+                barcodeInfo.classList.add('show');
+            } else if (processingResult.action === 'kept_full') {
+                barcodeDetails.innerHTML = `UPS tracking detected (1Z prefix) - using full scanned value: ${processingResult.processed}`;
+                barcodeInfo.classList.add('show');
+            } else {
+                barcodeInfo.classList.remove('show');
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadStatus = document.getElementById('uploadStatus');
+            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing CSV file...</div>';
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                delimitersToGuess: [',', '\t', '|', ';'],
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        uploadStatus.innerHTML = `<div class="error-message">Error parsing CSV: ${results.errors[0].message}</div>`;
+                        return;
+                    }
+
+                    // Clean headers by removing whitespace
+                    const cleanData = results.data.map(row => {
+                        const cleanRow = {};
+                        Object.keys(row).forEach(key => {
+                            const cleanKey = key.trim();
+                            cleanRow[cleanKey] = row[key];
+                        });
+                        return cleanRow;
+                    });
+
+                    csvData = cleanData;
+                    
+                    uploadStatus.innerHTML = `<div class="success-message">✅ Successfully loaded ${csvData.length} orders!</div>`;
+                    
+                    // Show stats and search section
+                    updateStats();
+                    document.getElementById('statsSection').style.display = 'block';
+                    document.getElementById('searchSection').style.display = 'block';
+                    
+                    // Add "View All URLs" button
+                    addViewAllUrlsButton();
+                },
+                error: function(error) {
+                    uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
+                }
+            });
+        }
+
+        function updateStats() {
+            const statsContent = document.getElementById('statsContent');
+            const totalOrders = csvData.length;
+            
+            // Count orders with Google Drive URLs
+            let ordersWithUrls = 0;
+            let totalUrls = 0;
+            
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    if (urls.length > 0) {
+                        ordersWithUrls++;
+                        totalUrls += urls.length;
+                    }
+                }
+            });
+
+            statsContent.innerHTML = `
+                <p><strong>${totalOrders}</strong> total orders loaded</p>
+                <p><strong>${ordersWithUrls}</strong> orders with Google Drive files</p>
+                <p><strong>${totalUrls}</strong> total Google Drive URLs found</p>
+            `;
+        }
+
+        function addViewAllUrlsButton() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length > 0) {
+                // Store URLs in localStorage for the new page
+                localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
+                
+                // Add the button to upload status
+                const currentContent = uploadStatus.innerHTML;
+                uploadStatus.innerHTML = currentContent + `
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="/view-urls.html" target="_blank" class="view-urls-button">
+                            📋 View All URLs (${allUrls.length} found)
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        function searchOrder() {
+            const rawInput = document.getElementById('trackingInput').value;
+            const resultsSection = document.getElementById('resultsSection');
+            
+            if (!rawInput.trim()) {
+                resultsSection.innerHTML = '<div class="error-message">Please enter a tracking number</div>';
+                return;
+            }
+
+            // Process the tracking number with smart barcode logic
+            const processingResult = processTrackingNumber(rawInput);
+            const trackingNumber = processingResult.processed;
+            
+            // Show barcode processing info
+            showBarcodeInfo(processingResult);
+            
+            // Update the input field with processed value
+            document.getElementById('trackingInput').value = trackingNumber;
+
+            // Search for the order
+            const order = csvData.find(row => {
+                const orderTracking = (row.tracking_number || '').toString().trim();
+                return orderTracking === trackingNumber;
+            });
+
+            if (!order) {
+                resultsSection.innerHTML = `
+                    <div class="error-message">
+                        ❌ No order found with tracking number: ${trackingNumber}
+                        ${processingResult.action === 'removed_prefix' ? 
+                            `<br><small>Original scanned: ${processingResult.original}</small>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            // Extract Google Drive URLs from notes
+            const googleDriveUrls = extractGoogleDriveUrls(order.notes || '');
+            
+            let html = `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <div class="tracking-number">📦 ${order.tracking_number}</div>
+                            <div class="order-number">Order #${order.number || 'N/A'}</div>
+                        </div>
+                    </div>
+            `;
+
+            if (googleDriveUrls.length > 0) {
+                html += `
+                    <h4 style="color: #333; margin-bottom: 15px;">📸 Order Images (${googleDriveUrls.length} files)</h4>
+                    <div class="images-grid">
+                `;
+                
+                googleDriveUrls.forEach((url, index) => {
+                    const fileId = extractFileId(url);
+                    html += `
+                        <div class="image-item">
+                            <div style="font-weight: bold; margin-bottom: 10px;">File ${index + 1}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">
+                                ID: ${fileId}
+                            </div>
+                            <div>
+                                <a href="${url}" target="_blank" class="image-link">🔗 Open</a>
+                                <a href="https://drive.google.com/uc?export=download&id=${fileId}" target="_blank" class="image-link" style="background: #28a745;">💾 Download</a>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            } else {
+                html += `<div class="error-message">No Google Drive images found for this order</div>`;
+            }
+
+            html += `</div>`;
+            resultsSection.innerHTML = html;
+        }
+
+        function extractGoogleDriveUrls(notes) {
+            if (!notes) return [];
+            
+            // Regular expression to match Google Drive URLs
+            const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g;
+            const matches = notes.match(driveUrlRegex);
+            
+            return matches || [];
+        }
+
+        function extractFileId(driveUrl) {
+            const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            return fileIdMatch ? fileIdMatch[1] : null;
+        }
+
+        // Check when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, app ready');
+        });
+    </script>
+</body>
+</html>
