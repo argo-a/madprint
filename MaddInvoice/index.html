@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaddInvoice - Invoice Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="invoice.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 MaddInvoice</h1>
+            <p>Generate monthly invoices from production order data</p>
+        </div>
+        
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📄 Upload Production Orders File</h3>
+                <p>Select your Excel or CSV file containing production order data</p>
+                <br>
+                <input type="file" id="dataFile" class="file-input" accept=".csv,.xlsx,.xls">
+                <button class="upload-button" onclick="document.getElementById('dataFile').click()">
+                    Choose File
+                </button>
+                <div id="uploadStatus"></div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section" id="filterSection" style="display: none;">
+                <h3>📅 Select Month for Invoice (2025)</h3>
+                <div class="filter-controls">
+                    <select id="monthSelect" class="month-select">
+                        <option value="">Select Month...</option>
+                        <option value="0" disabled class="disabled-month">January</option>
+                        <option value="1" disabled class="disabled-month">February</option>
+                        <option value="2" disabled class="disabled-month">March</option>
+                        <option value="3" disabled class="disabled-month">April</option>
+                        <option value="4" disabled class="disabled-month">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                    <button class="generate-button" onclick="generateInvoice()">Generate Invoice</button>
+                </div>
+                <div id="filterStatus"></div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h3>📊 Invoice Results</h3>
+                    <button class="download-button" onclick="downloadExcel()">📥 Download Excel Report</button>
+                </div>
+                
+                <div class="summary-card">
+                    <h4>Summary</h4>
+                    <div id="summaryContent"></div>
+                </div>
+
+                <div class="orders-table">
+                    <h4>Order Details</h4>
+                    <div id="ordersTableContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="version-footer">
+        <div class="version-info">MaddInvoice v1.7</div>
+    </footer>
+
+    <script src="invoice.js"></script>
+</body>
+</html>
