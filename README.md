@@ -1,118 +1,209 @@
-# MaddPrints - Tracking Number Image Matcher
+# MaddPrints App Suite v2.5
 
-A web application that matches tracking numbers to product images from CSV files, with server-side CORS bypass for Google Drive files.
+A comprehensive web application suite for print business operations, featuring tracking number management, invoice generation, and duplicate detection.
 
-## 🚀 Features
+## 🚀 App Suite Overview
 
-- **CSV Upload & Processing**: Upload order CSV files with tracking numbers and Google Drive image URLs
-- **Smart Search**: Search by tracking number to find associated product images
-- **Google Drive Integration**: Display images and PDFs directly from Google Drive URLs
-- **Server-Side CORS Bypass**: No browser restrictions - works reliably for all users
-- **Multiple File Formats**: Supports both images and PDF files
+The MaddPrints App Suite consists of four integrated modules:
+
+### 1. **Main App (Home)** - Tracking Number Image Matcher
+- Upload CSV files with tracking numbers and Google Drive URLs
+- Smart search by tracking number to find associated product images
+- Embedded Google Drive previews with download capabilities
+- File upload history with localStorage persistence
+
+### 2. **View URLs** - Comprehensive File Manager
+- Display all Google Drive URLs from uploaded CSV files
+- Grid and List view modes with toggle functionality
+- Multi-select functionality with selective downloads
+- Ship date sorting (newest/oldest first)
+- Bulk download capabilities
+
+### 3. **MaddInvoice** - Invoice Generator
+- Generate monthly invoices from production order data
+- Excel and CSV file support
+- Month-based filtering for 2025
+- Downloadable Excel reports
+- Order summary and detailed breakdowns
+
+### 4. **Duplicator** - Package Duplicate Checker
+- Upload CSV files with tracking numbers
+- Smart barcode scanning with auto-submit functionality
+- Duplicate detection with customer name display
+- Missing package identification
+- Real-time analysis with comprehensive reporting
+
+## 🛠️ Technical Features
+
+### Smart Barcode Processing
+- **UPS 1Z Prefix Handling**: Automatically processes UPS tracking numbers
+- **Long Number Prefix Removal**: Strips prefixes from scanned barcodes
+- **Auto-Submit**: No manual "Add Item" clicks required
+
+### Google Drive Integration
+- **Embedded Previews**: Direct iframe previews of Google Drive files
+- **Multiple URL Formats**: Supports view, preview, and download URLs
+- **CORS Bypass**: Server-side proxy for reliable file access
+
+### Data Management
+- **CSV Processing**: PapaParse library for robust CSV handling
+- **LocalStorage**: Persistent data storage for user sessions
+- **File Upload History**: Track previously uploaded files
+
+### User Experience
 - **Responsive Design**: Works on desktop and mobile devices
+- **Seamless Navigation**: Footer navigation across all modules
+- **Visual Feedback**: Loading states, success/error messages
+- **Multi-View Support**: Grid/List toggles where applicable
 
 ## 📁 Project Structure
 
 ```
-madprint/
-├── index.html          # Main web application
+MaddPrints/
+├── index.html              # Main app (v2.4)
+├── view-urls.html          # File manager with multi-select
+├── MaddInvoice/
+│   ├── index.html          # Invoice generator (v1.7)
+│   ├── invoice.css         # Styling
+│   ├── invoice.js          # Logic
+│   └── test-orders.csv     # Sample data
+├── Duplicator/
+│   ├── index.html          # Duplicate checker (v1.2)
+│   ├── duplicator.css      # Styling
+│   ├── duplicator.js       # Logic
+│   └── test-tracking.csv   # Sample data
 ├── api/
-│   └── proxy.js        # Vercel serverless function for CORS bypass
-├── vercel.json         # Vercel deployment configuration
-└── README.md           # This file
+│   ├── proxy.js            # CORS bypass proxy
+│   ├── download-files.js   # File download handler
+│   ├── serve-file.js       # File serving
+│   ├── clear-downloads.js  # Cleanup utility
+│   └── debug.js            # Debug endpoint
+├── chrome-extension/       # Browser extension (optional)
+├── vercel.json            # Deployment configuration
+└── README.md              # This file
 ```
 
-## 🛠️ Deployment to Vercel
+## 🚀 Deployment
 
-### Prerequisites
-- GitHub account
-- Vercel account (free)
-- Your CSV files with Google Drive URLs in the "notes" field
+### Vercel Deployment (Recommended)
+1. **Push to GitHub**: Ensure all files are committed
+2. **Connect to Vercel**: Import GitHub repository
+3. **Auto-Deploy**: Vercel handles configuration automatically
+4. **Access**: Available at your Vercel domain
 
-### Step 1: Push to GitHub
-1. Make sure all files are in your GitHub repository: `https://github.com/argo-a/madprint.git`
-2. Commit and push all changes:
-   ```bash
-   git add .
-   git commit -m "Add server-side CORS bypass"
-   git push origin main
-   ```
+### Local Development
+```bash
+# Clone repository
+git clone https://github.com/argo-a/madprint.git
+cd MaddPrints
 
-### Step 2: Deploy to Vercel
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click "New Project"
-3. Import your GitHub repository: `argo-a/madprint`
-4. Vercel will automatically detect the configuration
-5. Click "Deploy"
+# Serve locally (Python)
+python -m http.server 8000
 
-### Step 3: Access Your App
-- Your app will be available at: `https://madprint.vercel.app` (or similar)
-- The deployment typically takes 1-2 minutes
+# Or use any local server
+# Access at http://localhost:8000
+```
 
-## 🔧 How It Works
+## 📊 Usage Guide
 
-### CORS Bypass Solution
-The app uses a server-side proxy to bypass Google Drive's CORS restrictions:
+### Main App Workflow
+1. **Upload CSV**: Select file with tracking numbers and Google Drive URLs
+2. **Search**: Enter tracking number to find associated files
+3. **Preview**: View embedded Google Drive previews
+4. **Download**: Use download buttons for offline access
 
-1. **Frontend**: Requests Google Drive files through `/api/proxy?url=...`
-2. **Proxy Server**: Fetches files server-side (no CORS issues)
-3. **Response**: Returns file data to the frontend
+### View URLs Workflow
+1. **Upload CSV**: Process file to extract all Google Drive URLs
+2. **Choose View**: Toggle between Grid and List views
+3. **Select Files**: Use checkboxes for multi-select
+4. **Sort**: Order by ship date (newest/oldest)
+5. **Download**: Bulk download all or selected files
 
-### Supported Google Drive URLs
-The app automatically extracts and processes these URL formats:
-- `https://drive.google.com/file/d/FILE_ID/view?usp=drive_link`
-- Converts to various endpoints for optimal loading
+### MaddInvoice Workflow
+1. **Upload Data**: Select Excel/CSV with production orders
+2. **Select Month**: Choose month for invoice generation
+3. **Generate**: Create invoice with summary and details
+4. **Download**: Export Excel report
 
-### CSV Format
-Your CSV should include:
-- `tracking_number` column
-- `notes` column containing Google Drive URLs
-- Other order details (optional)
+### Duplicator Workflow
+1. **Upload CSV**: Load file with tracking numbers
+2. **Scan Items**: Use barcode scanner or manual entry
+3. **Auto-Submit**: Items automatically added (no manual clicks)
+4. **Analyze**: Run duplicate detection analysis
+5. **Review Results**: Check duplicates, missing, and extra items
 
-## 📊 Usage
+## 🔧 CSV Format Requirements
 
-1. **Upload CSV**: Click "Choose CSV File" and select your orders file
-2. **Search**: Enter a tracking number and press Enter
-3. **View Results**: Images and PDFs will load automatically via the proxy
-4. **Download**: Use the download buttons for offline access
+### Main App & View URLs
+```csv
+tracking_number,notes,shipped_at,number,shipping_address_first_name,shipping_address_last_name
+1Z123456789,https://drive.google.com/file/d/FILE_ID/view?usp=drive_link,2025-08-29,ORD001,John,Doe
+```
 
-## 🔍 Troubleshooting
+### MaddInvoice
+```csv
+order_date,order_number,customer_name,amount,status
+2025-06-01,ORD001,John Doe,150.00,completed
+```
 
-### Images Not Loading
-- Ensure Google Drive files are publicly accessible
-- Check that URLs are in the correct format
-- Verify the "notes" field contains valid Google Drive links
+### Duplicator
+```csv
+tracking_number,customer_name
+1Z123456789,John Doe
+```
 
-### Deployment Issues
-- Make sure all files are committed to GitHub
-- Check Vercel deployment logs for errors
-- Ensure `api/proxy.js` and `vercel.json` are present
+## 🎯 Key Features by Module
 
-### CSV Problems
-- Verify column names match expected format
-- Check for extra spaces in headers
-- Ensure tracking numbers are unique
+### Main App
+- ✅ Smart tracking number search
+- ✅ Embedded Google Drive previews
+- ✅ File upload history
+- ✅ Customer name display
+- ✅ Responsive design
 
-## 🎯 Benefits Over Local Version
+### View URLs
+- ✅ Grid/List view toggle
+- ✅ Multi-select with checkboxes
+- ✅ Ship date sorting
+- ✅ Bulk download functionality
+- ✅ Selective file downloads
 
-- ✅ **No Browser Restrictions**: Works on any device/browser
-- ✅ **No Extension Required**: No Chrome extension installation needed
-- ✅ **Better Performance**: Server-side processing is faster
-- ✅ **Mobile Friendly**: Works on phones and tablets
-- ✅ **Always Available**: Accessible from anywhere with internet
-- ✅ **Reliable**: No CORS errors or loading failures
+### MaddInvoice
+- ✅ Monthly invoice generation
+- ✅ Excel/CSV support
+- ✅ Downloadable reports
+- ✅ Order summaries
+- ✅ 2025 month filtering
 
-## 🔒 Security
+### Duplicator
+- ✅ Smart barcode processing
+- ✅ Auto-submit functionality
+- ✅ Duplicate detection
+- ✅ Missing package identification
+- ✅ Real-time analysis
 
-- Only Google Drive URLs are allowed through the proxy
-- No sensitive data is stored on the server
-- All processing happens client-side except for file fetching
-- Files are streamed directly to the browser
+## 🔒 Security & Performance
+
+- **Server-Side CORS Bypass**: Reliable Google Drive access
+- **Client-Side Processing**: No sensitive data stored on server
+- **LocalStorage**: Secure local data persistence
+- **Responsive Design**: Optimized for all devices
+- **Error Handling**: Comprehensive error management
+
+## 🆕 Version History
+
+- **v2.5**: Added comprehensive technical documentation and updated README
+- **v2.4**: Enhanced footer navigation across all modules
+- **v2.3**: Added customer names and embedded previews
+- **v2.2**: Multi-select and view toggle functionality
+- **v2.1**: Ship date sorting and enhanced UI
+- **v2.0**: Complete app suite with all modules
 
 ## 📝 License
 
-This project is for internal use. All rights reserved.
+This project is for internal business use. All rights reserved.
 
 ---
 
-**Need help?** Check the Vercel deployment logs or contact support.
+**Live App**: [https://madprint.vercel.app](https://madprint.vercel.app)
+**Repository**: [https://github.com/argo-a/madprint](https://github.com/argo-a/madprint)
