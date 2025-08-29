@@ -568,6 +568,7 @@
                 
                 googleDriveUrls.forEach((url, index) => {
                     const fileId = extractFileId(url);
+                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
                     html += `
                         <div class="image-item">
                             <div style="font-weight: bold; margin-bottom: 10px;">File ${index + 1}</div>
@@ -575,6 +576,7 @@
                                 ID: ${fileId}
                             </div>
                             <div>
+                                <a href="${previewUrl}" target="_blank" class="image-link">👁️ Preview</a>
                                 <a href="${url}" target="_blank" class="image-link">🔗 Open</a>
                                 <a href="https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download" target="_blank" class="image-link" style="background: #28a745;">💾 Download</a>
                             </div>
