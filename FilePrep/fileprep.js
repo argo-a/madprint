@@ -147,7 +147,7 @@ async function startProcessing() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                files: fileData
+                fileUrls: fileData
             })
         });
 
