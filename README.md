@@ -1,4 +1,4 @@
-# MaddPrints App Suite v2.5
+# MaddPrints App Suite v2.6
 
 A comprehensive web application suite for print business operations, featuring tracking number management, invoice generation, and duplicate detection.
 
@@ -192,6 +192,7 @@ tracking_number,customer_name
 
 ## 🆕 Version History
 
+- **v2.6**: Previous uploads now display on page load for immediate access
 - **v2.5**: Added comprehensive technical documentation and updated README
 - **v2.4**: Enhanced footer navigation across all modules
 - **v2.3**: Added customer names and embedded previews

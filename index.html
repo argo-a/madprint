@@ -327,7 +327,7 @@
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
         <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; font-weight: 500;">
-            MaddPrints v2.5 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a>
+            MaddPrints v2.6 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a>
         </div>
     </footer>
 
@@ -710,7 +710,49 @@
         // Check when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded, app ready');
+            
+            // Show previous uploads on page load
+            showPreviousUploadsOnLoad();
         });
+
+        function showPreviousUploadsOnLoad() {
+            const existingUploads = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            
+            if (existingUploads.length === 0) return;
+            
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            let uploadsHtml = `
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h4 style="margin-bottom: 15px; color: #495057;">📁 Previous Uploads</h4>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Load a previously uploaded CSV file to continue working</p>
+                    <div style="max-height: 200px; overflow-y: auto;">
+            `;
+            
+            existingUploads.forEach((upload, index) => {
+                const uploadDate = new Date(upload.uploadDate);
+                const formattedDate = uploadDate.toLocaleDateString() + ' ' + uploadDate.toLocaleTimeString();
+                
+                uploadsHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: white; border-radius: 5px; border: 1px solid #e9ecef;">
+                        <div>
+                            <strong>${upload.fileName}</strong><br>
+                            <small style="color: #666;">${formattedDate} • ${upload.orderCount} orders</small>
+                        </div>
+                        <button onclick="loadPreviousUpload(${index})" class="btn" style="background: #28a745; padding: 6px 12px; font-size: 0.8rem;">
+                            📂 Load
+                        </button>
+                    </div>
+                `;
+            });
+            
+            uploadsHtml += `
+                    </div>
+                </div>
+            `;
+            
+            uploadStatus.innerHTML = uploadsHtml;
+        }
     </script>
 </body>
 </html>
