@@ -7,27 +7,33 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { fileUrls, jobId } = req.body;
+        const { files, fileUrls, jobId } = req.body;
+        
+        // Support both 'files' and 'fileUrls' for backward compatibility
+        const fileData = files || fileUrls;
 
-        if (!fileUrls || !Array.isArray(fileUrls) || fileUrls.length === 0) {
-            return res.status(400).json({ error: 'Invalid file URLs provided' });
+        if (!fileData || !Array.isArray(fileData) || fileData.length === 0) {
+            return res.status(400).json({ error: 'Invalid file data provided' });
         }
 
         // Create job metadata
         const job = {
             id: jobId || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             status: 'processing',
-            totalFiles: fileUrls.length,
+            totalFiles: fileData.length,
             processedFiles: 0,
             startTime: new Date().toISOString(),
-            files: fileUrls.map((url, index) => ({
+            files: fileData.map((item, index) => ({
                 id: `file_${index}`,
-                originalUrl: url.url,
-                trackingNumber: url.trackingNumber,
-                customerName: url.customerName,
-                fileId: url.fileId,
+                originalUrl: item.url,
+                trackingNumber: item.trackingNumber,
+                customerName: item.customerName,
+                orderNumber: item.orderNumber,
+                fileId: item.fileId,
+                originalFilename: item.originalFilename,
                 status: 'pending',
                 processedUrl: null,
+                thumbnailUrl: null,
                 error: null
             }))
         };
@@ -44,7 +50,7 @@ export default async function handler(req, res) {
         res.status(200).json({
             success: true,
             jobId: job.id,
-            message: `Started processing ${fileUrls.length} files`,
+            message: `Started processing ${fileData.length} files`,
             statusUrl: `/api/file-prep-status?jobId=${job.id}`
         });
 
@@ -77,8 +83,9 @@ async function processFilesAsync(job) {
                 const contentType = originalResponse.headers.get('content-type') || '';
                 
                 if (contentType.startsWith('image/')) {
-                    // Process image rotation
+                    // Process image rotation and thumbnail generation
                     const rotatedBuffer = await rotateImage(originalBlob, contentType);
+                    const thumbnailBuffer = await generateThumbnail(originalBlob, contentType);
                     
                     // Upload rotated file to Vercel Blob
                     const fileName = `${file.trackingNumber}_rotated_${file.id}.${getFileExtension(contentType)}`;
@@ -87,7 +94,15 @@ async function processFilesAsync(job) {
                         contentType: contentType
                     });
 
+                    // Upload thumbnail to Vercel Blob
+                    const thumbnailFileName = `thumbnails/${file.trackingNumber}_${file.orderNumber}_thumb.jpg`;
+                    const thumbnailBlob = await put(thumbnailFileName, thumbnailBuffer, {
+                        access: 'public',
+                        contentType: 'image/jpeg'
+                    });
+
                     file.processedUrl = rotatedBlob.url;
+                    file.thumbnailUrl = thumbnailBlob.url;
                     file.status = 'completed';
                 } else {
                     // For non-image files, just copy them
@@ -151,6 +166,41 @@ async function rotateImage(imageBuffer, contentType) {
         console.error('Error rotating image with Sharp:', error);
         // If Sharp fails, return original buffer
         return imageBuffer;
+    }
+}
+
+async function generateThumbnail(imageBuffer, contentType) {
+    try {
+        // Generate a 200x200 thumbnail using Sharp
+        const thumbnailBuffer = await sharp(Buffer.from(imageBuffer))
+            .resize(200, 200, {
+                fit: 'cover',
+                position: 'center'
+            })
+            .jpeg({ quality: 85 }) // Convert to JPEG for consistency
+            .toBuffer();
+        
+        return thumbnailBuffer;
+    } catch (error) {
+        console.error('Error generating thumbnail with Sharp:', error);
+        // If thumbnail generation fails, create a simple placeholder
+        try {
+            const placeholderBuffer = await sharp({
+                create: {
+                    width: 200,
+                    height: 200,
+                    channels: 3,
+                    background: { r: 240, g: 240, b: 240 }
+                }
+            })
+            .jpeg()
+            .toBuffer();
+            
+            return placeholderBuffer;
+        } catch (placeholderError) {
+            console.error('Error creating placeholder thumbnail:', placeholderError);
+            return imageBuffer; // Return original as fallback
+        }
     }
 }
 

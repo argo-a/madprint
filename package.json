@@ -1,5 +1,20 @@
 {
+  "name": "maddprints",
+  "version": "2.8.1",
+  "description": "Comprehensive web application suite for print business operations",
+  "scripts": {
+    "update-version": "node update-version.js",
+    "pre-commit": "bash pre-commit-hook.sh",
+    "setup-hooks": "cp pre-commit-hook.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit"
+  },
   "dependencies": {
     "sharp": "^0.34.3"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/argo-a/madprint.git"
+  },
+  "author": "MaddPrints",
+  "license": "MIT"
 }

@@ -1,542 +1,217 @@
-# MaddPrints App Suite - Technical Documentation
+# MaddPrints Technical Documentation
 
-This document provides detailed technical information about the MaddPrints App Suite architecture, logic, and implementation details for rebuilding or maintaining the application.
+## Overview
+MaddPrints is a comprehensive web application suite designed to streamline print business operations. The application consists of multiple integrated modules that handle different aspects of the business workflow.
 
-## 🏗️ Architecture Overview
+## Version: 2.8.1
 
-The MaddPrints App Suite is a client-side web application with server-side CORS bypass functionality. It consists of four main modules that share common libraries and design patterns.
+## Application Modules
 
-### Core Technologies
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **CSV Processing**: PapaParse library (v5.4.1)
-- **Excel Processing**: SheetJS (xlsx v0.18.5)
-- **Storage**: Browser LocalStorage
-- **Deployment**: Vercel with serverless functions
+### 1. 📦 Order Tracker (Main Module)
+**Location:** `/` (root)
+**Purpose:** Core order tracking and Google Drive file management
 
-## 📋 Module-by-Module Technical Breakdown
+**Features:**
+- CSV upload with order data
+- Smart barcode processing (UPS tracking support)
+- Google Drive URL extraction and preview
+- Order search by tracking number
+- File preview with iframe integration
+- Previous upload history management
 
-### 1. Main App (index.html) - v2.4
+**Key Files:**
+- `index.html` - Main interface
+- Smart barcode processing with prefix removal
+- Google Drive integration for file previews
 
-#### Purpose
-Tracking number search and Google Drive file display with embedded previews.
+### 2. 📄 MaddInvoice
+**Location:** `/MaddInvoice/`
+**Purpose:** Monthly invoice generation from production data
 
-#### Key Functions
-```javascript
-// Core search functionality
-function searchTracking() {
-    const trackingNumber = document.getElementById('trackingInput').value.trim();
-    // Searches through csvData array for matching tracking numbers
-    // Displays results with embedded Google Drive previews
-}
+**Features:**
+- Excel/CSV file upload
+- Month-based filtering (2025)
+- Automatic invoice calculation
+- Excel report generation
+- Production order analysis
 
-// CSV processing
-function processCSV() {
-    // Uses PapaParse to convert CSV to JSON
-    // Extracts Google Drive URLs from 'notes' field
-    // Stores data in global csvData variable
-}
+**Key Files:**
+- `MaddInvoice/index.html` - Main interface
+- `MaddInvoice/invoice.js` - Business logic
+- `MaddInvoice/invoice.css` - Styling
 
-// Google Drive URL handling
-function extractGoogleDriveUrls(notes) {
-    // Regex: /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g
-    // Extracts all Google Drive URLs from notes field
-}
-```
+### 3. 🔍 Duplicator
+**Location:** `/Duplicator/`
+**Purpose:** Package duplicate detection and missing item identification
 
-#### URL Logic
-- **Input Format**: `https://drive.google.com/file/d/FILE_ID/view?usp=drive_link`
-- **Preview Format**: `https://drive.google.com/file/d/FILE_ID/preview`
-- **Download Format**: `https://drive.usercontent.google.com/u/3/uc?id=FILE_ID&export=download`
+**Features:**
+- CSV upload with tracking numbers
+- Barcode scanning interface
+- Smart duplicate detection
+- Missing package identification
+- Customer name association
+- Excel export of analysis results
 
-#### Data Flow
-1. User uploads CSV file
-2. PapaParse converts to JSON array
-3. Data stored in `csvData` global variable
-4. Search function filters by tracking number
-5. Results displayed with embedded iframes
+**Key Files:**
+- `Duplicator/index.html` - Main interface
+- `Duplicator/duplicator.js` - Analysis logic
+- `Duplicator/duplicator.css` - Styling
+- `Duplicator/test-tracking.csv` - Sample data
 
-#### LocalStorage Usage
-```javascript
-// File upload history
-localStorage.setItem('uploadHistory', JSON.stringify(historyArray));
+### 4. 🎨 FILE PREP
+**Location:** `/FilePrep/`
+**Purpose:** Automated artwork processing and rotation
 
-// CSV data persistence
-localStorage.setItem('csvData', JSON.stringify(csvData));
-```
+**Features:**
+- CSV upload with Google Drive URLs
+- Automatic file download from Google Drive
+- Server-side image processing with Sharp library
+- 90-degree clockwise rotation
+- Asynchronous job processing
+- Real-time progress tracking
+- Multi-select download interface
+- Memory-efficient architecture for large files (30MB+)
 
-### 2. View URLs (view-urls.html)
+**Key Files:**
+- `FilePrep/index.html` - Main interface
+- `FilePrep/fileprep.js` - Frontend logic
+- `FilePrep/fileprep.css` - Styling
 
-#### Purpose
-Comprehensive file manager with multi-select, view toggles, and bulk operations.
+## Backend APIs
 
-#### Key Functions
-```javascript
-// View switching
-function switchView(view) {
-    // Toggles between 'grid' and 'list' views
-    // Updates CSS classes and button states
-}
+### File Processing APIs
+**Location:** `/api/`
 
-// Multi-select functionality
-function toggleFileSelection(fileKey, isSelected) {
-    // Manages selectedFiles Set
-    // Updates UI checkboxes and row highlighting
-}
+#### `/api/file-prep-start`
+- **Method:** POST
+- **Purpose:** Start file processing job
+- **Features:**
+  - Downloads files from Google Drive URLs
+  - Rotates images 90 degrees clockwise using Sharp
+  - Stores processed files in Vercel Blob storage
+  - Returns job ID for tracking
 
-// Sorting functionality
-function sortAndDisplay() {
-    // Sorts by ship date (newest/oldest)
-    // Re-renders both grid and list views
-}
+#### `/api/file-prep-status`
+- **Method:** GET
+- **Purpose:** Check job progress and status
+- **Features:**
+  - Real-time progress tracking
+  - File processing status
+  - Download URLs for completed files
 
-// Bulk download
-function downloadSelected() {
-    // Opens multiple download URLs with staggered timing
-    // 500ms delay between downloads to prevent browser blocking
-}
-```
+### Other APIs
+- `/api/proxy.js` - Proxy for external requests
+- `/api/download-files.js` - File download handling
+- `/api/serve-file.js` - File serving
+- `/api/clear-downloads.js` - Cleanup utilities
+- `/api/debug.js` - Debug utilities
 
-#### Data Structures
-```javascript
-// Global variables
-let currentView = 'grid';           // Current view mode
-let selectedFiles = new Set();      // Selected file keys
-let allUrlsData = [];              // All URL data for view switching
+## Technical Architecture
 
-// File key format
-const fileKey = `${trackingNumber}-${fileId}`;
-```
+### Frontend Technologies
+- **HTML5** - Modern semantic markup
+- **CSS3** - Responsive design with Grid and Flexbox
+- **Vanilla JavaScript** - No framework dependencies
+- **Papa Parse** - CSV parsing library
+- **XLSX.js** - Excel file handling
 
-#### View Toggle Logic
-- **Grid View**: CSS Grid layout with cards
-- **List View**: HTML table with compact rows
-- **Switching**: JavaScript toggles CSS classes and visibility
+### Backend Technologies
+- **Node.js** - Server runtime
+- **Vercel** - Hosting platform
+- **Vercel Blob** - File storage
+- **Sharp** - High-performance image processing
+- **Serverless Functions** - API endpoints
 
-### 3. MaddInvoice (MaddInvoice/index.html) - v1.7
+### Key Features
+- **Responsive Design** - Mobile-friendly interfaces
+- **Progressive Enhancement** - Works without JavaScript
+- **Memory Efficiency** - Handles large files without browser crashes
+- **Real-time Updates** - Live progress tracking
+- **Smart Processing** - Intelligent barcode handling
+- **Batch Operations** - Multi-file processing
 
-#### Purpose
-Monthly invoice generation from production order data.
+## File Processing Workflow (FILE PREP)
 
-#### Key Functions
-```javascript
-// File processing (Excel/CSV)
-function handleFileUpload(event) {
-    // Detects file type (.csv, .xlsx, .xls)
-    // Uses appropriate parser (PapaParse or SheetJS)
-}
+1. **Upload CSV** - User uploads CSV with Google Drive URLs
+2. **URL Extraction** - System extracts Google Drive file URLs from notes column
+3. **Job Creation** - Server creates processing job with unique ID
+4. **File Download** - System downloads files from Google Drive
+5. **Image Processing** - Sharp library rotates images 90 degrees clockwise
+6. **Storage** - Processed files stored in Vercel Blob
+7. **Progress Tracking** - Real-time updates via polling
+8. **Download Interface** - Multi-select download of processed files
 
-// Month filtering
-function generateInvoice() {
-    // Filters orders by selected month
-    // Calculates totals and summaries
-    // Generates downloadable Excel report
-}
+## Smart Barcode Processing
 
-// Excel export
-function downloadExcel() {
-    // Uses SheetJS to create Excel workbook
-    // Multiple sheets: Summary, Details
-    // Triggers download with proper filename
-}
-```
+The application includes intelligent barcode processing that handles various tracking number formats:
 
-#### Data Processing Logic
-```javascript
-// Month filtering logic
-const selectedMonth = parseInt(document.getElementById('monthSelect').value);
-const filteredOrders = allOrders.filter(order => {
-    const orderDate = new Date(order.order_date);
-    return orderDate.getMonth() === selectedMonth && orderDate.getFullYear() === 2025;
-});
-```
+1. **UPS Tracking (1Z prefix)** - Uses full tracking number
+2. **Long Barcodes** - Removes first 8 digits (prefix removal)
+3. **Standard Format** - Uses as-is
 
-#### Excel Generation
-- **Library**: SheetJS (xlsx)
-- **Format**: Multi-sheet workbook
-- **Sheets**: Summary, Order Details
-- **Download**: Blob URL with automatic download
+## Navigation Structure
 
-### 4. Duplicator (Duplicator/index.html) - v1.2
+All modules are integrated with consistent navigation:
+- 🏠 Home (Order Tracker)
+- 📋 View URLs
+- 📄 Invoice Generator (MaddInvoice)
+- 🔍 Duplicator
+- 🎨 FILE PREP
 
-#### Purpose
-Package scanning and duplicate detection with smart barcode processing.
+## Deployment
 
-#### Key Functions
-```javascript
-// Smart barcode processing
-function processBarcode(input) {
-    // Handles UPS 1Z prefix detection
-    // Removes long number prefixes
-    // Returns cleaned tracking number
-}
+The application is deployed on Vercel with:
+- Automatic deployments from GitHub
+- Serverless function APIs
+- Blob storage for file handling
+- Environment variable configuration
 
-// Auto-submit functionality
-function handleBarcodeInput() {
-    // Automatically submits after barcode scan
-    // No manual "Add Item" button required
-    // Updates scanned items list in real-time
-}
+## Dependencies
 
-// Duplicate analysis
-function runAnalysis() {
-    // Compares scanned items with CSV data
-    // Identifies: duplicates, missing, extra items
-    // Generates comprehensive report
-}
-```
-
-#### Barcode Processing Logic
-```javascript
-// UPS tracking number detection
-if (input.startsWith('1Z')) {
-    // UPS tracking number - use as-is
-    return input;
-}
-
-// Long number prefix removal
-if (input.length > 15) {
-    // Extract last 10-15 characters
-    return input.slice(-12);
-}
-```
-
-#### Analysis Algorithm
-```javascript
-// Duplicate detection
-const duplicates = scannedItems.filter((item, index) => 
-    scannedItems.indexOf(item) !== index
-);
-
-// Missing packages (in CSV but not scanned)
-const missing = csvTrackingNumbers.filter(tracking => 
-    !scannedItems.includes(tracking)
-);
-
-// Extra scanned (scanned but not in CSV)
-const extra = scannedItems.filter(tracking => 
-    !csvTrackingNumbers.includes(tracking)
-);
-```
-
-## 🔗 Google Drive URL Handling
-
-### URL Transformation Logic
-```javascript
-// Extract file ID from Google Drive URL
-function extractFileId(driveUrl) {
-    const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
-    return fileIdMatch ? fileIdMatch[1] : null;
-}
-
-// Generate different URL formats
-const fileId = extractFileId(originalUrl);
-const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`;
-```
-
-### CORS Bypass Implementation
-```javascript
-// Server-side proxy (api/proxy.js)
-export default async function handler(req, res) {
-    const { url } = req.query;
-    
-    // Validate Google Drive URL
-    if (!url || !url.includes('drive.google.com')) {
-        return res.status(400).json({ error: 'Invalid URL' });
-    }
-    
-    // Fetch file server-side (no CORS restrictions)
-    const response = await fetch(url);
-    const data = await response.buffer();
-    
-    // Return file data to client
-    res.setHeader('Content-Type', response.headers.get('content-type'));
-    res.send(data);
-}
-```
-
-## 💾 Data Storage Patterns
-
-### LocalStorage Structure
-```javascript
-// Upload history
-{
-    "uploadHistory": [
-        {
-            "filename": "orders.csv",
-            "timestamp": "2025-08-29T20:45:00.000Z",
-            "recordCount": 150
-        }
-    ]
-}
-
-// CSV data cache
-{
-    "csvData": [
-        {
-            "tracking_number": "1Z123456789",
-            "notes": "https://drive.google.com/file/d/...",
-            "shipped_at": "2025-08-29",
-            "number": "ORD001",
-            "shipping_address_first_name": "John",
-            "shipping_address_last_name": "Doe"
-        }
-    ]
-}
-
-// Google Drive URLs cache
-{
-    "googleDriveUrls": [
-        {
-            "trackingNumber": "1Z123456789",
-            "orderNumber": "ORD001",
-            "customerName": "John Doe",
-            "shippedAt": "2025-08-29",
-            "url": "https://drive.google.com/file/d/.../view?usp=drive_link",
-            "fileId": "FILE_ID_HERE"
-        }
-    ]
-}
-```
-
-## 🎨 CSS Architecture
-
-### Design System
-```css
-/* Color Palette */
-:root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-}
-
-/* Component Patterns */
-.btn {
-    /* Base button styling */
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.card {
-    /* Base card styling */
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    padding: 20px;
-}
-```
-
-### Responsive Breakpoints
-```css
-/* Mobile First Approach */
-@media (max-width: 768px) {
-    /* Mobile styles */
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-    /* Tablet styles */
-}
-
-@media (min-width: 1025px) {
-    /* Desktop styles */
-}
-```
-
-## 🔄 State Management
-
-### Global Variables Pattern
-```javascript
-// Each module maintains its own global state
-let csvData = [];              // Main data array
-let currentView = 'grid';      // UI state
-let selectedFiles = new Set(); // Selection state
-let isLoading = false;         // Loading state
-```
-
-### Event Handling
-```javascript
-// File upload handling
-document.getElementById('csvFile').addEventListener('change', handleFileUpload);
-
-// Search functionality
-document.getElementById('searchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        searchTracking();
-    }
-});
-
-// Auto-submit for barcode scanning
-document.getElementById('trackingInput').addEventListener('input', function(e) {
-    // Auto-submit logic for barcode scanners
-    if (e.target.value.length >= 10) {
-        setTimeout(() => addScannedItem(), 100);
-    }
-});
-```
-
-## 🚀 Deployment Configuration
-
-### Vercel Configuration (vercel.json)
+### Production Dependencies
 ```json
 {
-    "functions": {
-        "api/proxy.js": {
-            "maxDuration": 30
-        }
-    },
-    "headers": [
-        {
-            "source": "/api/(.*)",
-            "headers": [
-                {
-                    "key": "Access-Control-Allow-Origin",
-                    "value": "*"
-                }
-            ]
-        }
-    ]
+  "sharp": "^0.33.0"
 }
 ```
 
-### Build Process
-1. **No Build Step Required**: Pure client-side application
-2. **Static Files**: All HTML, CSS, JS served directly
-3. **Serverless Functions**: API routes handled by Vercel
-4. **Auto-Deploy**: GitHub integration triggers deployments
+### CDN Dependencies
+- Papa Parse 5.4.1
+- XLSX.js 0.18.5
 
-## 🔧 Error Handling Patterns
+## Version History
 
-### CSV Processing Errors
-```javascript
-Papa.parse(file, {
-    complete: function(results) {
-        if (results.errors.length > 0) {
-            showError(`CSV parsing error: ${results.errors[0].message}`);
-            return;
-        }
-        // Process successful results
-    },
-    error: function(error) {
-        showError(`File reading error: ${error.message}`);
-    }
-});
-```
+### v2.8.1 (Current)
+- Added complete FILE PREP module
+- Server-side image processing with Sharp
+- Asynchronous job processing
+- Multi-select download interface
+- Updated all modules to v2.8
 
-### Google Drive Access Errors
-```javascript
-// Iframe error handling
-iframe.onerror = function() {
-    // Fallback to text display
-    iframe.style.display = 'none';
-    showFallbackMessage();
-};
+### v2.7
+- Added Duplicator module
+- Enhanced barcode processing
+- Improved navigation
 
-// Download error handling
-fetch(downloadUrl)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        return response.blob();
-    })
-    .catch(error => {
-        showError(`Download failed: ${error.message}`);
-    });
-```
+## Security Considerations
 
-## 📊 Performance Optimizations
+- Server-side file processing prevents client-side memory issues
+- Temporary file storage with automatic cleanup
+- Input validation and sanitization
+- CORS handling for cross-origin requests
 
-### Lazy Loading
-```javascript
-// Load images only when visible
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            loadImage(entry.target);
-        }
-    });
-});
-```
+## Performance Optimizations
 
-### Debounced Search
-```javascript
-// Prevent excessive search calls
-let searchTimeout;
-function debouncedSearch(query) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        performSearch(query);
-    }, 300);
-}
-```
+- Asynchronous processing for large files
+- Memory-efficient image processing
+- Progressive loading interfaces
+- Optimized file storage and retrieval
+- Client-side caching for repeated operations
 
-### Staggered Downloads
-```javascript
-// Prevent browser blocking multiple downloads
-items.forEach((item, index) => {
-    setTimeout(() => {
-        window.open(item.downloadUrl, '_blank');
-    }, index * 500); // 500ms delay between downloads
-});
-```
+## Future Enhancements
 
-## 🔍 Debugging and Maintenance
-
-### Debug Endpoints
-- `/api/debug.js`: Server status and configuration
-- Console logging for client-side debugging
-- Error boundaries for graceful failure handling
-
-### Common Issues and Solutions
-
-1. **CORS Errors**: Use server-side proxy
-2. **CSV Parsing Failures**: Validate headers and encoding
-3. **Google Drive Access**: Check file permissions
-4. **Mobile Responsiveness**: Test on various screen sizes
-5. **Performance**: Monitor file sizes and loading times
-
-### Monitoring
-```javascript
-// Performance monitoring
-console.time('CSV Processing');
-// ... processing code ...
-console.timeEnd('CSV Processing');
-
-// Error tracking
-window.addEventListener('error', (e) => {
-    console.error('Global error:', e.error);
-    // Send to monitoring service if needed
-});
-```
-
-## 🔄 Future Enhancement Guidelines
-
-### Adding New Modules
-1. Create new directory with `index.html`, `styles.css`, `script.js`
-2. Follow existing naming conventions
-3. Implement consistent footer navigation
-4. Add to main app navigation
-5. Update README and technical docs
-
-### Extending Functionality
-1. Maintain backward compatibility
-2. Use existing libraries (PapaParse, SheetJS)
-3. Follow established patterns for state management
-4. Implement proper error handling
-5. Add comprehensive testing
-
-### Version Management
-- Update version numbers in HTML files
-- Document changes in README
-- Commit with descriptive messages
-- Tag releases for major versions
-
----
-
-This technical documentation provides the foundation for rebuilding, maintaining, or extending the MaddPrints App Suite. All modules follow consistent patterns and can be understood through this architectural overview.
+- Batch processing optimization
+- Additional image formats support
+- Enhanced progress tracking
+- File compression options
+- Advanced filtering and search capabilities
