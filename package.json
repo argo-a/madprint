@@ -1,6 +1,6 @@
 {
   "name": "maddprints",
-  "version": "2.8.6",
+  "version": "2.8.7",
   "description": "Comprehensive web application suite for print business operations",
   "scripts": {
     "update-version": "node update-version.js",

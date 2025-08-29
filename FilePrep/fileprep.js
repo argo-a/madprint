@@ -194,7 +194,7 @@ async function updateProgress() {
     if (!currentJobId) return;
 
     try {
-        const response = await fetch(`/api/file-prep-status?jobId=${currentJobId}`);
+        const response = await fetch(`/api/file-prep-status-simple?jobId=${currentJobId}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
