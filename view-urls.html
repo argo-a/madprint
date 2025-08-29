@@ -351,20 +351,54 @@
                         <button onclick="downloadAllFiles()" class="btn btn-success" style="font-size: 1rem; padding: 12px 24px;">
                             📥 Download All Files
                         </button>
+                        <div style="margin-top: 15px;">
+                            <label style="margin-right: 10px; font-weight: bold;">📅 Sort by Ship Date:</label>
+                            <select id="sortOrder" onchange="sortAndDisplay()" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="url-grid">
+                <div class="url-grid" id="urlGrid">
             `;
 
-            // Display each tracking number group
-            Object.keys(urlsByTracking).forEach(trackingNumber => {
+            // Get sort order from dropdown (default to newest first)
+            const sortOrder = document.getElementById('sortOrder')?.value || 'newest';
+            
+            // Sort tracking numbers by ship date
+            const sortedTrackingNumbers = Object.keys(urlsByTracking).sort((a, b) => {
+                const aShippedAt = urlsByTracking[a][0].shippedAt;
+                const bShippedAt = urlsByTracking[b][0].shippedAt;
+                
+                // Handle null/undefined dates
+                if (!aShippedAt && !bShippedAt) return 0;
+                if (!aShippedAt) return 1; // Put null dates at end
+                if (!bShippedAt) return -1;
+                
+                const aDate = new Date(aShippedAt);
+                const bDate = new Date(bShippedAt);
+                
+                // Sort based on selected order
+                if (sortOrder === 'oldest') {
+                    return aDate - bDate; // Oldest first
+                } else {
+                    return bDate - aDate; // Newest first (default)
+                }
+            });
+
+            // Display each tracking number group in sorted order
+            sortedTrackingNumbers.forEach(trackingNumber => {
                 const items = urlsByTracking[trackingNumber];
+                
+                // Format ship date for display
+                const shipDate = items[0].shippedAt ? new Date(items[0].shippedAt).toLocaleDateString() : 'No ship date';
                 
                 html += `
                     <div class="url-card">
                         <div class="tracking-number">📦 ${trackingNumber}</div>
-                        <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''}</div>
+                        <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''} | 📅 ${shipDate}</div>
                         ${items[0].customerName ? `<div class="customer-name">👤 ${items[0].customerName}</div>` : ''}
                 `;
 
@@ -495,6 +529,7 @@
                             trackingNumber: order.tracking_number || 'N/A',
                             orderNumber: order.number || 'N/A',
                             customerName: fullName || null,
+                            shippedAt: order.shipped_at || null,
                             url: url,
                             fileId: extractFileId(url)
                         });
@@ -564,6 +599,19 @@
             } catch (error) {
                 console.error('Error downloading files:', error);
                 alert('Error downloading files. Please try again.');
+            }
+        }
+
+        // Sort and display function
+        function sortAndDisplay() {
+            const storedData = localStorage.getItem('googleDriveUrls');
+            if (!storedData) return;
+            
+            try {
+                const urlsData = JSON.parse(storedData);
+                displayUrls(urlsData);
+            } catch (error) {
+                console.error('Error sorting data:', error);
             }
         }
 
