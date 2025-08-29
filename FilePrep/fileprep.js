@@ -140,8 +140,8 @@ async function startProcessing() {
             customerName: item.customerName
         }));
 
-        // Start the processing job
-        const response = await fetch('/api/file-prep-start', {
+        // Start the processing job (using simple endpoint for testing)
+        const response = await fetch('/api/file-prep-start-simple', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
