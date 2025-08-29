@@ -7,14 +7,20 @@ export default async function handler(req, res) {
     }
 
     try {
+        console.log('FILE PREP START - Request received');
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+        
         const { files, fileUrls, jobId } = req.body;
         
         // Support both 'files' and 'fileUrls' for backward compatibility
         const fileData = files || fileUrls;
 
         if (!fileData || !Array.isArray(fileData) || fileData.length === 0) {
+            console.log('ERROR: Invalid file data provided');
             return res.status(400).json({ error: 'Invalid file data provided' });
         }
+
+        console.log(`Processing ${fileData.length} files`);
 
         // Create job metadata
         const job = {
@@ -56,7 +62,13 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('Error starting file prep job:', error);
-        res.status(500).json({ error: 'Failed to start file preparation job' });
+        console.error('Error stack:', error.stack);
+        console.error('Error message:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to start file preparation job',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 }
 
