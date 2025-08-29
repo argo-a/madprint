@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Google Drive CORS Bypass",
+  "version": "1.0",
+  "description": "Bypass CORS restrictions for Google Drive files in web applications",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "https://drive.google.com/*",
+    "https://lh3.googleusercontent.com/*",
+    "https://docs.google.com/*"
+  ],
+  "host_permissions": [
+    "https://drive.google.com/*",
+    "https://lh3.googleusercontent.com/*",
+    "https://docs.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Google Drive CORS Bypass",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

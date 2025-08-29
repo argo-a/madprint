@@ -180,6 +180,13 @@
             color: #666;
         }
 
+        .customer-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-top: 8px;
+        }
+
         .images-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -320,7 +327,7 @@
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
         <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; font-weight: 500;">
-            MaddPrints v2.1 | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a>
+            MaddPrints v2.3 | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a>
         </div>
     </footer>
 
@@ -467,9 +474,14 @@
                 if (order.notes) {
                     const urls = extractGoogleDriveUrls(order.notes);
                     urls.forEach(url => {
+                        const firstName = order.shipping_address_first_name || '';
+                        const lastName = order.shipping_address_last_name || '';
+                        const fullName = `${firstName} ${lastName}`.trim();
+                        
                         allUrls.push({
                             trackingNumber: order.tracking_number || 'N/A',
                             orderNumber: order.number || 'N/A',
+                            customerName: fullName || null,
                             url: url,
                             fileId: extractFileId(url)
                         });
@@ -532,12 +544,18 @@
             // Extract Google Drive URLs from notes
             const googleDriveUrls = extractGoogleDriveUrls(order.notes || '');
             
+            // Get customer name
+            const firstName = order.shipping_address_first_name || '';
+            const lastName = order.shipping_address_last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim();
+            
             let html = `
                 <div class="order-card">
                     <div class="order-header">
                         <div>
                             <div class="tracking-number">📦 ${order.tracking_number}</div>
                             <div class="order-number">Order #${order.number || 'N/A'}</div>
+                            ${fullName ? `<div class="customer-name">👤 ${fullName}</div>` : ''}
                         </div>
                     </div>
             `;
@@ -558,7 +576,7 @@
                             </div>
                             <div>
                                 <a href="${url}" target="_blank" class="image-link">🔗 Open</a>
-                                <a href="https://drive.google.com/uc?export=download&id=${fileId}" target="_blank" class="image-link" style="background: #28a745;">💾 Download</a>
+                                <a href="https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download" target="_blank" class="image-link" style="background: #28a745;">💾 Download</a>
                             </div>
                         </div>
                     `;

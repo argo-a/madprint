@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Google Drive URLs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .url-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .url-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tracking-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .order-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .customer-name {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .file-id {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #495057;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .url-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin: 2px;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #3367d6;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .stats {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .stats h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-section.active {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 All Google Drive URLs</h1>
+            <p>Clean list of all Google Drive files from your CSV</p>
+        </div>
+        
+        <div class="content">
+            <a href="/" class="back-btn">← Back to Main App</a>
+            
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📄 Upload CSV File</h3>
+                <p>Select your orders CSV file to view all Google Drive URLs</p>
+                <br>
+                <input type="file" id="csvFile" class="file-input" accept=".csv">
+                <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                    Choose CSV File
+                </button>
+                <div id="uploadStatus"></div>
+            </div>
+            
+            <div id="urlsContainer">
+                <div class="no-data">
+                    <h3>No URLs to display</h3>
+                    <p>Upload a CSV file above to see all Google Drive URLs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get URLs from URL parameters or localStorage
+        function loadUrls() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlsData = urlParams.get('data');
+            
+            if (urlsData) {
+                try {
+                    const decodedData = decodeURIComponent(urlsData);
+                    const parsedData = JSON.parse(decodedData);
+                    displayUrls(parsedData);
+                } catch (error) {
+                    console.error('Error parsing URL data:', error);
+                    showNoData();
+                }
+            } else {
+                // Try to get from localStorage as fallback
+                const storedData = localStorage.getItem('googleDriveUrls');
+                if (storedData) {
+                    try {
+                        const parsedData = JSON.parse(storedData);
+                        displayUrls(parsedData);
+                    } catch (error) {
+                        console.error('Error parsing stored data:', error);
+                        showNoData();
+                    }
+                } else {
+                    showNoData();
+                }
+            }
+        }
+
+        function displayUrls(urlsData) {
+            const container = document.getElementById('urlsContainer');
+            
+            if (!urlsData || urlsData.length === 0) {
+                showNoData();
+                return;
+            }
+
+            // Group URLs by tracking number
+            const urlsByTracking = {};
+            urlsData.forEach(item => {
+                if (!urlsByTracking[item.trackingNumber]) {
+                    urlsByTracking[item.trackingNumber] = [];
+                }
+                urlsByTracking[item.trackingNumber].push(item);
+            });
+
+            const totalUrls = urlsData.length;
+            const totalOrders = Object.keys(urlsByTracking).length;
+
+            let html = `
+                <div class="stats">
+                    <h3>📊 Summary</h3>
+                    <p><strong>${totalUrls}</strong> Google Drive URLs found across <strong>${totalOrders}</strong> orders</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="downloadAllFiles()" class="btn btn-success" style="font-size: 1rem; padding: 12px 24px;">
+                            📥 Download All Files
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="url-grid">
+            `;
+
+            // Display each tracking number group
+            Object.keys(urlsByTracking).forEach(trackingNumber => {
+                const items = urlsByTracking[trackingNumber];
+                
+                html += `
+                    <div class="url-card">
+                        <div class="tracking-number">📦 ${trackingNumber}</div>
+                        <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''}</div>
+                        ${items[0].customerName ? `<div class="customer-name">👤 ${items[0].customerName}</div>` : ''}
+                `;
+
+                items.forEach((item, index) => {
+                    html += `
+                        <div class="file-item">
+                            <div style="font-weight: bold; margin-bottom: 8px;">File ${index + 1}</div>
+                            <div class="file-id">ID: ${item.fileId}</div>
+                            <div class="url-display">${item.url}</div>
+                            <div>
+                                <a href="${item.url}" target="_blank" class="btn">🔗 Open in Drive</a>
+                                <a href="https://drive.usercontent.google.com/u/3/uc?id=${item.fileId}&export=download" target="_blank" class="btn btn-success">💾 Download</a>
+                                <button onclick="copyToClipboard('${item.url}')" class="btn btn-secondary">📋 Copy</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function showNoData() {
+            const container = document.getElementById('urlsContainer');
+            container.innerHTML = `
+                <div class="no-data">
+                    <h3>No URLs to display</h3>
+                    <p>Please upload a CSV file first from the main page.</p>
+                    <a href="/" class="btn" style="margin-top: 20px;">Go to Main Page</a>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '#6c757d';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        // CSV processing variables
+        let csvData = [];
+
+        // File upload handling
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadSection = document.getElementById('uploadSection');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing CSV file...</div>';
+            uploadSection.classList.add('active');
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                delimitersToGuess: [',', '\t', '|', ';'],
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        uploadStatus.innerHTML = `<div class="error-message">Error parsing CSV: ${results.errors[0].message}</div>`;
+                        return;
+                    }
+
+                    // Clean headers by removing whitespace
+                    const cleanData = results.data.map(row => {
+                        const cleanRow = {};
+                        Object.keys(row).forEach(key => {
+                            const cleanKey = key.trim();
+                            cleanRow[cleanKey] = row[key];
+                        });
+                        return cleanRow;
+                    });
+
+                    csvData = cleanData;
+                    
+                    // Extract URLs and process
+                    processCSVData();
+                },
+                error: function(error) {
+                    uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
+                }
+            });
+        }
+
+        function processCSVData() {
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Extract all Google Drive URLs from CSV
+            const allUrls = [];
+            csvData.forEach(order => {
+                if (order.notes) {
+                    const urls = extractGoogleDriveUrls(order.notes);
+                    urls.forEach(url => {
+                        const firstName = order.shipping_address_first_name || '';
+                        const lastName = order.shipping_address_last_name || '';
+                        const fullName = `${firstName} ${lastName}`.trim();
+                        
+                        allUrls.push({
+                            trackingNumber: order.tracking_number || 'N/A',
+                            orderNumber: order.number || 'N/A',
+                            customerName: fullName || null,
+                            url: url,
+                            fileId: extractFileId(url)
+                        });
+                    });
+                }
+            });
+
+            if (allUrls.length === 0) {
+                uploadStatus.innerHTML = `<div class="error-message">❌ No Google Drive URLs found in the CSV file</div>`;
+                showNoData();
+                return;
+            }
+
+            // Store in localStorage
+            localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
+            
+            // Show success message
+            uploadStatus.innerHTML = `<div class="success-message">✅ Successfully processed ${csvData.length} orders and found ${allUrls.length} Google Drive URLs!</div>`;
+            
+            // Display the URLs
+            displayUrls(allUrls);
+        }
+
+        function extractGoogleDriveUrls(notes) {
+            if (!notes) return [];
+            
+            // Regular expression to match Google Drive URLs
+            const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g;
+            const matches = notes.match(driveUrlRegex);
+            
+            return matches || [];
+        }
+
+        function extractFileId(driveUrl) {
+            const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
+            return fileIdMatch ? fileIdMatch[1] : null;
+        }
+
+        // Download all files function
+        function downloadAllFiles() {
+            const storedData = localStorage.getItem('googleDriveUrls');
+            if (!storedData) {
+                alert('No URLs found. Please upload a CSV file first.');
+                return;
+            }
+
+            try {
+                const urlsData = JSON.parse(storedData);
+                if (urlsData.length === 0) {
+                    alert('No files to download.');
+                    return;
+                }
+
+                // Show confirmation
+                const confirmed = confirm(`This will open ${urlsData.length} download links in new tabs. Continue?`);
+                if (!confirmed) return;
+
+                // Open download links with delay to prevent browser blocking
+                urlsData.forEach((item, index) => {
+                    setTimeout(() => {
+                        const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${item.fileId}&export=download`;
+                        window.open(downloadUrl, '_blank');
+                    }, index * 500); // 500ms delay between each download
+                });
+
+                alert(`Started downloading ${urlsData.length} files. Check your downloads folder.`);
+            } catch (error) {
+                console.error('Error downloading files:', error);
+                alert('Error downloading files. Please try again.');
+            }
+        }
+
+        // Load URLs when page loads
+        window.addEventListener('load', loadUrls);
+    </script>
+</body>
+</html>
