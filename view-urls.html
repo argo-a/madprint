@@ -258,6 +258,221 @@
             margin-bottom: 20px;
             border-left: 4px solid #dc3545;
         }
+
+        /* View Toggle and Selection Controls */
+        .view-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+
+        .view-btn {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .view-btn:hover:not(.active) {
+            background: #dee2e6;
+        }
+
+        .selection-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .selection-info {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .download-selected-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: none;
+        }
+
+        .download-selected-btn:hover {
+            background: #218838;
+        }
+
+        .download-selected-btn.show {
+            display: inline-block;
+        }
+
+        /* List View Styles */
+        .url-list {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .url-list.active {
+            display: block;
+        }
+
+        .url-grid.active {
+            display: grid;
+        }
+
+        .url-grid.inactive {
+            display: none;
+        }
+
+        .list-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .list-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .list-table td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+
+        .list-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .list-table tr.selected {
+            background: #e3f2fd;
+        }
+
+        .file-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .list-preview {
+            width: 80px;
+            height: 60px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .list-order-info {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .list-tracking {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .list-customer {
+            color: #28a745;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .list-date {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .list-file-info {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .list-file-id {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .list-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .list-actions .btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            margin: 1px;
+        }
+
+        /* Master checkbox styling */
+        .master-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .view-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .selection-controls {
+                justify-content: center;
+            }
+
+            .list-table {
+                font-size: 0.8rem;
+            }
+
+            .list-table th,
+            .list-table td {
+                padding: 10px 8px;
+            }
+
+            .list-preview {
+                width: 60px;
+                height: 45px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -323,6 +538,11 @@
             }
         }
 
+        // Global variables for view management
+        let currentView = 'grid';
+        let selectedFiles = new Set();
+        let allUrlsData = [];
+
         function displayUrls(urlsData) {
             const container = document.getElementById('urlsContainer');
             
@@ -330,6 +550,9 @@
                 showNoData();
                 return;
             }
+
+            // Store data globally for view switching
+            allUrlsData = urlsData;
 
             // Group URLs by tracking number
             const urlsByTracking = {};
@@ -360,10 +583,37 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="url-grid" id="urlGrid">
+
+                <!-- View Controls -->
+                <div class="view-controls">
+                    <div class="view-toggle">
+                        <button class="view-btn ${currentView === 'grid' ? 'active' : ''}" onclick="switchView('grid')">
+                            🔲 Grid View
+                        </button>
+                        <button class="view-btn ${currentView === 'list' ? 'active' : ''}" onclick="switchView('list')">
+                            📋 List View
+                        </button>
+                    </div>
+                    <div class="selection-controls">
+                        <button onclick="selectAll()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">Select All</button>
+                        <button onclick="selectNone()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">Select None</button>
+                        <span class="selection-info" id="selectionInfo">0 files selected</span>
+                        <button onclick="downloadSelected()" class="download-selected-btn" id="downloadSelectedBtn">📥 Download Selected</button>
+                    </div>
+                </div>
             `;
 
+            // Add grid view
+            html += generateGridView(urlsByTracking);
+            
+            // Add list view
+            html += generateListView(urlsData);
+
+            container.innerHTML = html;
+            updateSelectionDisplay();
+        }
+
+        function generateGridView(urlsByTracking) {
             // Get sort order from dropdown (default to newest first)
             const sortOrder = document.getElementById('sortOrder')?.value || 'newest';
             
@@ -388,6 +638,8 @@
                 }
             });
 
+            let gridHtml = `<div class="url-grid ${currentView === 'grid' ? 'active' : 'inactive'}" id="urlGrid">`;
+
             // Display each tracking number group in sorted order
             sortedTrackingNumbers.forEach(trackingNumber => {
                 const items = urlsByTracking[trackingNumber];
@@ -395,7 +647,7 @@
                 // Format ship date for display
                 const shipDate = items[0].shippedAt ? new Date(items[0].shippedAt).toLocaleDateString() : 'No ship date';
                 
-                html += `
+                gridHtml += `
                     <div class="url-card">
                         <div class="tracking-number">📦 ${trackingNumber}</div>
                         <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''} | 📅 ${shipDate}</div>
@@ -404,9 +656,13 @@
 
                 items.forEach((item, index) => {
                     const previewUrl = `https://drive.google.com/file/d/${item.fileId}/preview`;
-                    html += `
+                    const fileKey = `${item.trackingNumber}-${item.fileId}`;
+                    gridHtml += `
                         <div class="file-item">
-                            <div style="font-weight: bold; margin-bottom: 8px;">File ${index + 1}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="font-weight: bold;">File ${index + 1}</div>
+                                <input type="checkbox" class="file-checkbox" data-file-key="${fileKey}" onchange="toggleFileSelection('${fileKey}', this.checked)">
+                            </div>
                             <div class="file-id">ID: ${item.fileId}</div>
                             <div style="margin-bottom: 15px;">
                                 <iframe src="${previewUrl}" 
@@ -427,11 +683,99 @@
                     `;
                 });
 
-                html += `</div>`;
+                gridHtml += `</div>`;
             });
 
-            html += `</div>`;
-            container.innerHTML = html;
+            gridHtml += `</div>`;
+            return gridHtml;
+        }
+
+        function generateListView(urlsData) {
+            // Get sort order and sort the flat list
+            const sortOrder = document.getElementById('sortOrder')?.value || 'newest';
+            
+            const sortedUrls = [...urlsData].sort((a, b) => {
+                const aShippedAt = a.shippedAt;
+                const bShippedAt = b.shippedAt;
+                
+                // Handle null/undefined dates
+                if (!aShippedAt && !bShippedAt) return 0;
+                if (!aShippedAt) return 1;
+                if (!bShippedAt) return -1;
+                
+                const aDate = new Date(aShippedAt);
+                const bDate = new Date(bShippedAt);
+                
+                if (sortOrder === 'oldest') {
+                    return aDate - bDate;
+                } else {
+                    return bDate - aDate;
+                }
+            });
+
+            let listHtml = `
+                <div class="url-list ${currentView === 'list' ? 'active' : ''}" id="urlList">
+                    <table class="list-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="master-checkbox" onchange="toggleAllFiles(this.checked)">
+                                </th>
+                                <th style="width: 100px;">Preview</th>
+                                <th>Order Info</th>
+                                <th>File Info</th>
+                                <th style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sortedUrls.forEach(item => {
+                const previewUrl = `https://drive.google.com/file/d/${item.fileId}/preview`;
+                const fileKey = `${item.trackingNumber}-${item.fileId}`;
+                const shipDate = item.shippedAt ? new Date(item.shippedAt).toLocaleDateString() : 'No ship date';
+                
+                listHtml += `
+                    <tr class="file-row" data-file-key="${fileKey}">
+                        <td>
+                            <input type="checkbox" class="file-checkbox" data-file-key="${fileKey}" onchange="toggleFileSelection('${fileKey}', this.checked)">
+                        </td>
+                        <td>
+                            <iframe src="${previewUrl}" class="list-preview" frameborder="0"></iframe>
+                        </td>
+                        <td>
+                            <div class="list-order-info">
+                                <div class="list-tracking">📦 ${item.trackingNumber}</div>
+                                ${item.customerName ? `<div class="list-customer">👤 ${item.customerName}</div>` : ''}
+                                <div class="list-date">📅 ${shipDate}</div>
+                                <div style="font-size: 0.8rem; color: #666;">Order: ${item.orderNumber}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="list-file-info">
+                                <div class="list-file-id">ID: ${item.fileId}</div>
+                                <div style="font-size: 0.8rem; color: #666; word-break: break-all;">${item.url}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="list-actions">
+                                <a href="${previewUrl}" target="_blank" class="btn">👁️ Preview</a>
+                                <a href="${item.url}" target="_blank" class="btn">🔗 Open</a>
+                                <a href="https://drive.usercontent.google.com/u/3/uc?id=${item.fileId}&export=download" target="_blank" class="btn btn-success">💾 Download</a>
+                                <button onclick="copyToClipboard('${item.url}')" class="btn btn-secondary">📋 Copy</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            listHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            return listHtml;
         }
 
         function showNoData() {
@@ -613,6 +957,160 @@
             } catch (error) {
                 console.error('Error sorting data:', error);
             }
+        }
+
+        // View switching functions
+        function switchView(view) {
+            currentView = view;
+            
+            const gridView = document.getElementById('urlGrid');
+            const listView = document.getElementById('urlList');
+            const gridBtn = document.querySelector('.view-btn:first-child');
+            const listBtn = document.querySelector('.view-btn:last-child');
+            
+            if (view === 'grid') {
+                gridView.classList.add('active');
+                gridView.classList.remove('inactive');
+                listView.classList.remove('active');
+                gridBtn.classList.add('active');
+                listBtn.classList.remove('active');
+            } else {
+                gridView.classList.add('inactive');
+                gridView.classList.remove('active');
+                listView.classList.add('active');
+                gridBtn.classList.remove('active');
+                listBtn.classList.add('active');
+            }
+        }
+
+        // File selection functions
+        function toggleFileSelection(fileKey, isSelected) {
+            if (isSelected) {
+                selectedFiles.add(fileKey);
+            } else {
+                selectedFiles.delete(fileKey);
+            }
+            
+            // Update row highlighting in list view
+            const row = document.querySelector(`tr[data-file-key="${fileKey}"]`);
+            if (row) {
+                if (isSelected) {
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            }
+            
+            updateSelectionDisplay();
+        }
+
+        function selectAll() {
+            selectedFiles.clear();
+            
+            // Add all file keys to selection
+            allUrlsData.forEach(item => {
+                const fileKey = `${item.trackingNumber}-${item.fileId}`;
+                selectedFiles.add(fileKey);
+            });
+            
+            // Update all checkboxes
+            document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Update master checkbox
+            const masterCheckbox = document.querySelector('.master-checkbox');
+            if (masterCheckbox) {
+                masterCheckbox.checked = true;
+            }
+            
+            // Update row highlighting
+            document.querySelectorAll('.file-row').forEach(row => {
+                row.classList.add('selected');
+            });
+            
+            updateSelectionDisplay();
+        }
+
+        function selectNone() {
+            selectedFiles.clear();
+            
+            // Update all checkboxes
+            document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Update master checkbox
+            const masterCheckbox = document.querySelector('.master-checkbox');
+            if (masterCheckbox) {
+                masterCheckbox.checked = false;
+            }
+            
+            // Update row highlighting
+            document.querySelectorAll('.file-row').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            updateSelectionDisplay();
+        }
+
+        function toggleAllFiles(isSelected) {
+            if (isSelected) {
+                selectAll();
+            } else {
+                selectNone();
+            }
+        }
+
+        function updateSelectionDisplay() {
+            const selectionInfo = document.getElementById('selectionInfo');
+            const downloadBtn = document.getElementById('downloadSelectedBtn');
+            const count = selectedFiles.size;
+            
+            if (selectionInfo) {
+                selectionInfo.textContent = `${count} file${count !== 1 ? 's' : ''} selected`;
+            }
+            
+            if (downloadBtn) {
+                if (count > 0) {
+                    downloadBtn.classList.add('show');
+                    downloadBtn.textContent = `📥 Download Selected (${count})`;
+                } else {
+                    downloadBtn.classList.remove('show');
+                }
+            }
+        }
+
+        // Selective download function
+        function downloadSelected() {
+            if (selectedFiles.size === 0) {
+                alert('No files selected. Please select files to download.');
+                return;
+            }
+
+            const selectedItems = allUrlsData.filter(item => {
+                const fileKey = `${item.trackingNumber}-${item.fileId}`;
+                return selectedFiles.has(fileKey);
+            });
+
+            if (selectedItems.length === 0) {
+                alert('No valid files found for download.');
+                return;
+            }
+
+            // Show confirmation
+            const confirmed = confirm(`This will download ${selectedItems.length} selected files. Continue?`);
+            if (!confirmed) return;
+
+            // Open download links with delay to prevent browser blocking
+            selectedItems.forEach((item, index) => {
+                setTimeout(() => {
+                    const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${item.fileId}&export=download`;
+                    window.open(downloadUrl, '_blank');
+                }, index * 500); // 500ms delay between each download
+            });
+
+            alert(`Started downloading ${selectedItems.length} selected files. Check your downloads folder.`);
         }
 
         // Load URLs when page loads
