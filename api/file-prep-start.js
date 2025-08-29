@@ -70,10 +70,14 @@ async function processFilesAsync(job) {
                 file.status = 'processing';
                 await updateJobMetadata(job);
 
+                // Convert Google Drive URL to direct download URL
+                const downloadUrl = convertGoogleDriveUrl(file.originalUrl);
+                console.log(`Downloading from: ${downloadUrl}`);
+                
                 // Download original file
-                const originalResponse = await fetch(file.originalUrl);
+                const originalResponse = await fetch(downloadUrl);
                 if (!originalResponse.ok) {
-                    throw new Error(`Failed to download file: ${originalResponse.status}`);
+                    throw new Error(`Failed to download file: ${originalResponse.status} from ${downloadUrl}`);
                 }
 
                 const originalBuffer = await originalResponse.arrayBuffer();
@@ -214,6 +218,24 @@ function getFileExtension(contentType) {
         'application/pdf': 'pdf'
     };
     return extensions[contentType] || 'bin';
+}
+
+function convertGoogleDriveUrl(url) {
+    // Check if it's a Google Drive URL that needs conversion
+    if (url.includes('drive.google.com') && url.includes('/file/d/')) {
+        // Extract file ID from URLs like:
+        // https://drive.google.com/file/d/FILE_ID/view?usp=drive_link
+        // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch) {
+            const fileId = fileIdMatch[1];
+            // Convert to direct download URL
+            return `https://drive.google.com/uc?export=download&id=${fileId}`;
+        }
+    }
+    
+    // If it's not a Google Drive URL or already in direct format, return as-is
+    return url;
 }
 
 function getFileExtensionFromUrl(url) {
