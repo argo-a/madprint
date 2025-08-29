@@ -140,8 +140,8 @@ async function startProcessing() {
             customerName: item.customerName
         }));
 
-        // Start the processing job (using simple endpoint for testing)
-        const response = await fetch('/api/file-prep-start-simple', {
+        // Start the processing job
+        const response = await fetch('/api/file-prep-start', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ async function updateProgress() {
     if (!currentJobId) return;
 
     try {
-        const response = await fetch(`/api/file-prep-status-simple?jobId=${currentJobId}`);
+        const response = await fetch(`/api/file-prep-status?jobId=${currentJobId}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

@@ -3,7 +3,7 @@
 ## Overview
 MaddPrints is a comprehensive web application suite designed to streamline print business operations. The application consists of multiple integrated modules that handle different aspects of the business workflow.
 
-## Version: 2.8.7
+## Version: 2.8.8
 
 ## Application Modules
 
@@ -181,7 +181,7 @@ The application is deployed on Vercel with:
 
 ## Version History
 
-### v2.8.7 (Current)
+### v2.8.8 (Current)
 - Added complete FILE PREP module
 - Server-side image processing with Sharp
 - Asynchronous job processing

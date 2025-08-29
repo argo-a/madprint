@@ -1,5 +1,12 @@
 import { put } from '@vercel/blob';
-import sharp from 'sharp';
+
+// Conditionally import Sharp for serverless environment
+let sharp;
+try {
+    sharp = require('sharp');
+} catch (error) {
+    console.warn('Sharp not available, image processing will be skipped:', error.message);
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -171,6 +178,11 @@ async function updateJobMetadata(job) {
 }
 
 async function rotateImage(imageBuffer, contentType) {
+    if (!sharp) {
+        console.warn('Sharp not available, skipping image rotation');
+        return imageBuffer;
+    }
+    
     try {
         // Use Sharp to rotate image 90 degrees clockwise
         const rotatedBuffer = await sharp(Buffer.from(imageBuffer))
@@ -186,6 +198,11 @@ async function rotateImage(imageBuffer, contentType) {
 }
 
 async function generateThumbnail(imageBuffer, contentType) {
+    if (!sharp) {
+        console.warn('Sharp not available, skipping thumbnail generation');
+        return imageBuffer;
+    }
+    
     try {
         // Generate a 200x200 thumbnail using Sharp
         const thumbnailBuffer = await sharp(Buffer.from(imageBuffer))
