@@ -31,27 +31,81 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px 30px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 5px;
             font-weight: 300;
         }
 
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
         .content {
-            padding: 40px;
+            padding: 30px;
+        }
+
+        /* Compact Upload Section */
+        .upload-toggle {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .upload-header {
+            padding: 15px 20px;
+            background: #e9ecef;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .upload-header:hover {
+            background: #dee2e6;
+        }
+
+        .upload-header h3 {
+            font-size: 1rem;
+            color: #495057;
+            margin: 0;
+        }
+
+        .upload-arrow {
+            transition: transform 0.3s ease;
+            color: #6c757d;
+        }
+
+        .upload-arrow.expanded {
+            transform: rotate(180deg);
+        }
+
+        .upload-content {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .upload-content.expanded {
+            padding: 20px;
+            max-height: 500px;
         }
 
         .upload-section {
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            padding: 40px;
             text-align: center;
-            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
             transition: all 0.3s ease;
         }
 
@@ -68,9 +122,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 1rem;
             cursor: pointer;
             transition: transform 0.3s ease;
         }
@@ -79,72 +133,120 @@
             transform: translateY(-2px);
         }
 
+        /* Main Search Section - Now Prominent */
         .search-section {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 15px;
             margin-bottom: 30px;
-            display: none;
+            color: white;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+        }
+
+        .search-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .search-section p {
+            margin-bottom: 25px;
+            opacity: 0.9;
         }
 
         .search-box {
             display: flex;
             gap: 15px;
             align-items: center;
-            margin-bottom: 20px;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .search-input {
             flex: 1;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            padding: 18px 25px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
             outline: none;
-            transition: border-color 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .search-input:focus {
-            border-color: #667eea;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
         }
 
         .search-button {
-            background: #28a745;
-            color: white;
+            background: white;
+            color: #28a745;
             border: none;
-            padding: 15px 25px;
-            border-radius: 25px;
+            padding: 18px 30px;
+            border-radius: 30px;
             font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .search-button:hover {
-            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
 
         .barcode-info {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 8px;
-            padding: 10px 15px;
-            margin-top: 10px;
+            padding: 15px;
+            margin-top: 20px;
             font-size: 0.9rem;
-            color: #1976d2;
             display: none;
+            backdrop-filter: blur(10px);
         }
 
         .barcode-info.show {
             display: block;
         }
 
+        /* Stats Section - Compact */
         .stats-section {
             background: #e3f2fd;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             text-align: center;
             display: none;
+            border-left: 4px solid #2196f3;
+        }
+
+        .stats-section h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+
+        .stats-content {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
         }
 
         .results-section {
@@ -262,9 +364,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 1rem;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
             cursor: pointer;
             margin: 5px;
             transition: transform 0.3s ease;
@@ -275,37 +377,69 @@
         .view-urls-button:hover {
             transform: translateY(-2px);
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-input, .search-button {
+                width: 100%;
+            }
+
+            .stats-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .search-section h2 {
+                font-size: 1.4rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📦 MaddPrints Order Tracker</h1>
-            <p>Upload CSV and search by tracking number to find order images</p>
+            <p>Scan tracking numbers to instantly find order images</p>
         </div>
         
         <div class="content">
-            <!-- Upload Section -->
-            <div class="upload-section" id="uploadSection">
-                <h3>📄 Upload Orders CSV</h3>
-                <p>Select your orders CSV file to get started</p>
-                <br>
-                <input type="file" id="csvFile" class="file-input" accept=".csv">
-                <button class="upload-button" onclick="document.getElementById('csvFile').click()">
-                    Choose CSV File
-                </button>
-                <div id="uploadStatus"></div>
+            <!-- Compact Upload Section -->
+            <div class="upload-toggle">
+                <div class="upload-header" onclick="toggleUpload()">
+                    <h3>📄 Upload CSV File</h3>
+                    <span class="upload-arrow" id="uploadArrow">▼</span>
+                </div>
+                <div class="upload-content" id="uploadContent">
+                    <div class="upload-section">
+                        <p>Select your orders CSV file to get started</p>
+                        <input type="file" id="csvFile" class="file-input" accept=".csv">
+                        <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                            Choose CSV File
+                        </button>
+                    </div>
+                    <div id="uploadStatus"></div>
+                </div>
             </div>
 
-            <!-- Stats Section -->
+            <!-- Stats Section - Compact -->
             <div class="stats-section" id="statsSection">
                 <h3>📊 CSV Statistics</h3>
-                <div id="statsContent"></div>
+                <div class="stats-content" id="statsContent"></div>
             </div>
 
-            <!-- Search Section -->
-            <div class="search-section" id="searchSection">
-                <h3>🔍 Search by Tracking Number</h3>
+            <!-- Main Search Section - Now Prominent -->
+            <div class="search-section">
+                <h2>🔍 Search by Tracking Number</h2>
+                <p>Scan barcode or enter tracking number to find order images</p>
                 <div class="search-box">
                     <input type="text" id="trackingInput" class="search-input" 
                            placeholder="Scan or enter tracking number..." 
@@ -315,9 +449,6 @@
                 <div id="barcodeInfo" class="barcode-info">
                     <strong>Barcode Processing:</strong> <span id="barcodeDetails"></span>
                 </div>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">
-                    💡 Tip: Scan barcode or type tracking number and press Enter
-                </p>
             </div>
 
             <!-- Results Section -->
@@ -327,7 +458,7 @@
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
         <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; font-weight: 500;">
-            MaddPrints v2.8.8 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a> | <a href="/FilePrep/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🎨 FILE PREP</a>
+            MaddPrints v2.8.9 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a> | <a href="/FilePrep/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🎨 FILE PREP</a>
         </div>
     </footer>
 
@@ -342,7 +473,27 @@
                     searchOrder();
                 }
             });
+            
+            // Auto-focus on search input
+            document.getElementById('trackingInput').focus();
+            
+            // Show previous uploads on page load
+            showPreviousUploadsOnLoad();
         });
+
+        // Toggle upload section
+        function toggleUpload() {
+            const content = document.getElementById('uploadContent');
+            const arrow = document.getElementById('uploadArrow');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                arrow.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                arrow.classList.add('expanded');
+            }
+        }
 
         // Smart barcode processing function
         function processTrackingNumber(rawInput) {
@@ -429,16 +580,24 @@
                     
                     uploadStatus.innerHTML = `<div class="success-message">✅ Successfully loaded ${csvData.length} orders!</div>`;
                     
-                    // Show stats and search section
+                    // Show stats and collapse upload section
                     updateStats();
                     document.getElementById('statsSection').style.display = 'block';
-                    document.getElementById('searchSection').style.display = 'block';
+                    
+                    // Auto-collapse upload section after successful upload
+                    const content = document.getElementById('uploadContent');
+                    const arrow = document.getElementById('uploadArrow');
+                    content.classList.remove('expanded');
+                    arrow.classList.remove('expanded');
                     
                     // Add "View All URLs" button
                     addViewAllUrlsButton();
                     
                     // Show previous uploads
                     showPreviousUploads();
+                    
+                    // Focus back on search input
+                    document.getElementById('trackingInput').focus();
                 },
                 error: function(error) {
                     uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
@@ -479,8 +638,8 @@
             
             let uploadsHtml = `
                 <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h4 style="margin-bottom: 15px; color: #495057;">📁 Previous Uploads</h4>
-                    <div style="max-height: 200px; overflow-y: auto;">
+                    <h4 style="margin-bottom: 15px; color: #495057; font-size: 0.9rem;">📁 Previous Uploads</h4>
+                    <div style="max-height: 150px; overflow-y: auto;">
             `;
             
             existingUploads.forEach((upload, index) => {
@@ -490,10 +649,10 @@
                 uploadsHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: white; border-radius: 5px; border: 1px solid #e9ecef;">
                         <div>
-                            <strong>${upload.fileName}</strong><br>
-                            <small style="color: #666;">${formattedDate} • ${upload.orderCount} orders</small>
+                            <strong style="font-size: 0.9rem;">${upload.fileName}</strong><br>
+                            <small style="color: #666; font-size: 0.8rem;">${formattedDate} • ${upload.orderCount} orders</small>
                         </div>
-                        <button onclick="loadPreviousUpload(${index})" class="btn" style="background: #28a745; padding: 6px 12px; font-size: 0.8rem;">
+                        <button onclick="loadPreviousUpload(${index})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer;">
                             📂 Load
                         </button>
                     </div>
@@ -519,16 +678,24 @@
             const uploadStatus = document.getElementById('uploadStatus');
             uploadStatus.innerHTML = `<div class="success-message">✅ Loaded previous upload: ${upload.fileName} (${upload.orderCount} orders)</div>`;
             
-            // Show stats and search section
+            // Show stats and collapse upload section
             updateStats();
             document.getElementById('statsSection').style.display = 'block';
-            document.getElementById('searchSection').style.display = 'block';
+            
+            // Auto-collapse upload section
+            const content = document.getElementById('uploadContent');
+            const arrow = document.getElementById('uploadArrow');
+            content.classList.remove('expanded');
+            arrow.classList.remove('expanded');
             
             // Add "View All URLs" button
             addViewAllUrlsButton();
             
             // Show previous uploads again
             showPreviousUploads();
+            
+            // Focus back on search input
+            document.getElementById('trackingInput').focus();
         }
 
         function updateStats() {
@@ -550,9 +717,18 @@
             });
 
             statsContent.innerHTML = `
-                <p><strong>${totalOrders}</strong> total orders loaded</p>
-                <p><strong>${ordersWithUrls}</strong> orders with Google Drive files</p>
-                <p><strong>${totalUrls}</strong> total Google Drive URLs found</p>
+                <div class="stat-item">
+                    <div class="stat-number">${totalOrders}</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${ordersWithUrls}</div>
+                    <div class="stat-label">With Images</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${totalUrls}</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
             `;
         }
 
@@ -602,6 +778,11 @@
             
             if (!rawInput.trim()) {
                 resultsSection.innerHTML = '<div class="error-message">Please enter a tracking number</div>';
+                return;
+            }
+
+            if (csvData.length === 0) {
+                resultsSection.innerHTML = '<div class="error-message">Please upload a CSV file first</div>';
                 return;
             }
 
@@ -727,9 +908,9 @@
             
             let uploadsHtml = `
                 <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h4 style="margin-bottom: 15px; color: #495057;">📁 Previous Uploads</h4>
-                    <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">Load a previously uploaded CSV file to continue working</p>
-                    <div style="max-height: 200px; overflow-y: auto;">
+                    <h4 style="margin-bottom: 15px; color: #495057; font-size: 0.9rem;">📁 Previous Uploads</h4>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 0.8rem;">Load a previously uploaded CSV file to continue working</p>
+                    <div style="max-height: 150px; overflow-y: auto;">
             `;
             
             existingUploads.forEach((upload, index) => {
@@ -739,10 +920,10 @@
                 uploadsHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: white; border-radius: 5px; border: 1px solid #e9ecef;">
                         <div>
-                            <strong>${upload.fileName}</strong><br>
-                            <small style="color: #666;">${formattedDate} • ${upload.orderCount} orders</small>
+                            <strong style="font-size: 0.9rem;">${upload.fileName}</strong><br>
+                            <small style="color: #666; font-size: 0.8rem;">${formattedDate} • ${upload.orderCount} orders</small>
                         </div>
-                        <button onclick="loadPreviousUpload(${index})" class="btn" style="background: #28a745; padding: 6px 12px; font-size: 0.8rem;">
+                        <button onclick="loadPreviousUpload(${index})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer;">
                             📂 Load
                         </button>
                     </div>
