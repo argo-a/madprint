@@ -31,24 +31,29 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px 30px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 5px;
             font-weight: 300;
         }
 
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
         .content {
-            padding: 40px;
+            padding: 30px;
         }
 
         .url-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
             margin-top: 20px;
         }
 
@@ -387,8 +392,8 @@
         }
 
         .list-preview {
-            width: 80px;
-            height: 60px;
+            width: 150px;
+            height: 120px;
             border-radius: 5px;
             border: 1px solid #ddd;
         }
@@ -602,10 +607,12 @@
                             📥 Download All Files
                         </button>
                         <div style="margin-top: 15px;">
-                            <label style="margin-right: 10px; font-weight: bold;">📅 Sort by Ship Date:</label>
+                            <label style="margin-right: 10px; font-weight: bold;">📅 Sort by:</label>
                             <select id="sortOrder" onchange="sortAndDisplay()" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
+                                <option value="ship_newest">Ship Date (Newest First)</option>
+                                <option value="ship_oldest">Ship Date (Oldest First)</option>
+                                <option value="created_newest">Date Created (Newest First)</option>
+                                <option value="created_oldest">Date Created (Oldest First)</option>
                             </select>
                         </div>
                     </div>
@@ -631,37 +638,42 @@
             `;
 
             // Add grid view
-            html += generateGridView(urlsByTracking);
+            html += generateGridView(urlsByTracking, 'ship_newest');
             
             // Add list view
-            html += generateListView(urlsData);
+            html += generateListView(urlsData, 'ship_newest');
 
             container.innerHTML = html;
             updateSelectionDisplay();
         }
 
-        function generateGridView(urlsByTracking) {
-            // Get sort order from dropdown (default to newest first)
-            const sortOrder = document.getElementById('sortOrder')?.value || 'newest';
-            
-            // Sort tracking numbers by ship date
+        function generateGridView(urlsByTracking, sortOrder = 'ship_newest') {
+            // Sort tracking numbers based on selected criteria
             const sortedTrackingNumbers = Object.keys(urlsByTracking).sort((a, b) => {
-                const aShippedAt = urlsByTracking[a][0].shippedAt;
-                const bShippedAt = urlsByTracking[b][0].shippedAt;
+                let aDate, bDate;
+                
+                // Determine which date field to use
+                if (sortOrder.startsWith('ship_')) {
+                    aDate = urlsByTracking[a][0].shippedAt;
+                    bDate = urlsByTracking[b][0].shippedAt;
+                } else if (sortOrder.startsWith('created_')) {
+                    aDate = urlsByTracking[a][0].createdAt;
+                    bDate = urlsByTracking[b][0].createdAt;
+                }
                 
                 // Handle null/undefined dates
-                if (!aShippedAt && !bShippedAt) return 0;
-                if (!aShippedAt) return 1; // Put null dates at end
-                if (!bShippedAt) return -1;
+                if (!aDate && !bDate) return 0;
+                if (!aDate) return 1; // Put null dates at end
+                if (!bDate) return -1;
                 
-                const aDate = new Date(aShippedAt);
-                const bDate = new Date(bShippedAt);
+                const parsedADate = new Date(aDate);
+                const parsedBDate = new Date(bDate);
                 
                 // Sort based on selected order
-                if (sortOrder === 'oldest') {
-                    return aDate - bDate; // Oldest first
+                if (sortOrder.endsWith('_oldest')) {
+                    return parsedADate - parsedBDate; // Oldest first
                 } else {
-                    return bDate - aDate; // Newest first (default)
+                    return parsedBDate - parsedADate; // Newest first (default)
                 }
             });
 
@@ -671,14 +683,17 @@
             sortedTrackingNumbers.forEach(trackingNumber => {
                 const items = urlsByTracking[trackingNumber];
                 
-                // Format ship date for display
+                // Format dates for display
                 const shipDate = items[0].shippedAt ? new Date(items[0].shippedAt).toLocaleDateString() : 'No ship date';
+                const createdDate = items[0].createdAt ? new Date(items[0].createdAt).toLocaleDateString() : 'No created date';
                 
                 gridHtml += `
                     <div class="url-card">
                         <div class="tracking-number">📦 ${trackingNumber}</div>
-                        <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''} | 📅 ${shipDate}</div>
-                        ${items[0].customerName ? `<div class="customer-name">👤 ${items[0].customerName}</div>` : ''}
+                        <div class="order-info">Order: ${items[0].orderNumber} | ${items.length} file${items.length > 1 ? 's' : ''}</div>
+                        ${items[0].customerName ? `<div class="customer-name">👤 ${items[0].customerName}</div>` : '<div class="customer-name">👤 No customer name</div>'}
+                        <div class="order-info">📅 Shipped: ${shipDate}</div>
+                        <div class="order-info">📅 Created: ${createdDate}</div>
                 `;
 
                 items.forEach((item, index) => {
@@ -694,7 +709,7 @@
                             <div style="margin-bottom: 15px;">
                                 <iframe src="${previewUrl}" 
                                         width="100%" 
-                                        height="200" 
+                                        height="500" 
                                         frameborder="0" 
                                         style="border-radius: 8px; border: 1px solid #ddd;">
                                 </iframe>
@@ -717,31 +732,39 @@
             return gridHtml;
         }
 
-        function generateListView(urlsData) {
-            // Get sort order and sort the flat list
-            const sortOrder = document.getElementById('sortOrder')?.value || 'newest';
-            
+        function generateListView(urlsData, sortOrder = 'ship_newest') {
             const sortedUrls = [...urlsData].sort((a, b) => {
-                const aShippedAt = a.shippedAt;
-                const bShippedAt = b.shippedAt;
+                let aDate, bDate;
+                
+                // Determine which date field to use
+                if (sortOrder.startsWith('ship_')) {
+                    aDate = a.shippedAt;
+                    bDate = b.shippedAt;
+                } else if (sortOrder.startsWith('created_')) {
+                    aDate = a.createdAt;
+                    bDate = b.createdAt;
+                }
                 
                 // Handle null/undefined dates
-                if (!aShippedAt && !bShippedAt) return 0;
-                if (!aShippedAt) return 1;
-                if (!bShippedAt) return -1;
+                if (!aDate && !bDate) return 0;
+                if (!aDate) return 1;
+                if (!bDate) return -1;
                 
-                const aDate = new Date(aShippedAt);
-                const bDate = new Date(bShippedAt);
+                const parsedADate = new Date(aDate);
+                const parsedBDate = new Date(bDate);
                 
-                if (sortOrder === 'oldest') {
-                    return aDate - bDate;
+                // Sort based on selected order
+                if (sortOrder.endsWith('_oldest')) {
+                    return parsedADate - parsedBDate; // Oldest first
                 } else {
-                    return bDate - aDate;
+                    return parsedBDate - parsedADate; // Newest first (default)
                 }
             });
 
+            // Check current view state to set proper class
+            const isListActive = currentView === 'list';
             let listHtml = `
-                <div class="url-list ${currentView === 'list' ? 'active' : ''}" id="urlList">
+                <div class="url-list ${isListActive ? 'active' : ''}" id="urlList">
                     <table class="list-table">
                         <thead>
                             <tr>
@@ -761,6 +784,7 @@
                 const previewUrl = `https://drive.google.com/file/d/${item.fileId}/preview`;
                 const fileKey = `${item.trackingNumber}-${item.fileId}`;
                 const shipDate = item.shippedAt ? new Date(item.shippedAt).toLocaleDateString() : 'No ship date';
+                const createdDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'No created date';
                 
                 listHtml += `
                     <tr class="file-row" data-file-key="${fileKey}">
@@ -773,8 +797,9 @@
                         <td>
                             <div class="list-order-info">
                                 <div class="list-tracking">📦 ${item.trackingNumber}</div>
-                                ${item.customerName ? `<div class="list-customer">👤 ${item.customerName}</div>` : ''}
-                                <div class="list-date">📅 ${shipDate}</div>
+                                <div class="list-customer">👤 ${item.customerName || 'No customer name'}</div>
+                                <div class="list-date">📅 Shipped: ${shipDate}</div>
+                                <div class="list-date">📅 Created: ${createdDate}</div>
                                 <div style="font-size: 0.8rem; color: #666;">Order: ${item.orderNumber}</div>
                             </div>
                         </td>
@@ -901,6 +926,7 @@
                             orderNumber: order.number || 'N/A',
                             customerName: fullName || null,
                             shippedAt: order.shipped_at || null,
+                            createdAt: order.created_at || null,
                             url: url,
                             fileId: extractFileId(url)
                         });
@@ -980,7 +1006,41 @@
             
             try {
                 const urlsData = JSON.parse(storedData);
-                displayUrls(urlsData);
+                const sortOrder = document.getElementById('sortOrder').value;
+                
+                // Group URLs by tracking number for grid view
+                const urlsByTracking = {};
+                urlsData.forEach(item => {
+                    if (!urlsByTracking[item.trackingNumber]) {
+                        urlsByTracking[item.trackingNumber] = [];
+                    }
+                    urlsByTracking[item.trackingNumber].push(item);
+                });
+                
+                // Update both views with new sorting
+                const gridContainer = document.getElementById('urlGrid');
+                const listContainer = document.getElementById('urlList');
+                
+                if (gridContainer) {
+                    const newGridHtml = generateGridView(urlsByTracking, sortOrder);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newGridHtml;
+                    const newGridElement = tempDiv.firstChild;
+                    gridContainer.parentNode.replaceChild(newGridElement, gridContainer);
+                }
+                
+                if (listContainer) {
+                    const newListHtml = generateListView(urlsData, sortOrder);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newListHtml;
+                    const newListElement = tempDiv.firstChild;
+                    listContainer.parentNode.replaceChild(newListElement, listContainer);
+                }
+                
+                // Clear selections after re-rendering
+                selectedFiles.clear();
+                updateSelectionDisplay();
+                
             } catch (error) {
                 console.error('Error sorting data:', error);
             }
@@ -996,17 +1056,33 @@
             const listBtn = document.querySelector('.view-btn:last-child');
             
             if (view === 'grid') {
-                gridView.classList.add('active');
-                gridView.classList.remove('inactive');
-                listView.classList.remove('active');
-                gridBtn.classList.add('active');
-                listBtn.classList.remove('active');
+                if (gridView) {
+                    gridView.classList.add('active');
+                    gridView.classList.remove('inactive');
+                }
+                if (listView) {
+                    listView.classList.remove('active');
+                }
+                if (gridBtn) {
+                    gridBtn.classList.add('active');
+                }
+                if (listBtn) {
+                    listBtn.classList.remove('active');
+                }
             } else {
-                gridView.classList.add('inactive');
-                gridView.classList.remove('active');
-                listView.classList.add('active');
-                gridBtn.classList.remove('active');
-                listBtn.classList.add('active');
+                if (gridView) {
+                    gridView.classList.add('inactive');
+                    gridView.classList.remove('active');
+                }
+                if (listView) {
+                    listView.classList.add('active');
+                }
+                if (gridBtn) {
+                    gridBtn.classList.remove('active');
+                }
+                if (listBtn) {
+                    listBtn.classList.add('active');
+                }
             }
         }
 

@@ -95,7 +95,7 @@ function validateDataStructure() {
     if (orderData.length === 0) return;
     
     const firstRow = orderData[0];
-    const requiredColumns = ['shipped_at', 'id', 'number'];
+    const requiredColumns = ['shipped_at', 'id', 'number', 'quantity_shipped'];
     const missingColumns = requiredColumns.filter(col => !(col in firstRow));
     
     if (missingColumns.length > 0) {
@@ -186,7 +186,7 @@ function groupByOrder(filteredData) {
 // Calculate costs based on business rules
 function calculateCosts(orders) {
     const results = Object.values(orders).map(order => {
-        const qty = order.items.length;
+        const qty = order.items.reduce((sum, item) => sum + (parseInt(item.quantity_shipped) || 0), 0);
         const unitCost = 7.00; // Always $7.00 per print
         const additionalShipping = qty === 1 ? 0.00 : 0.25; // $0.25 fee for multi-item orders
         const printsCost = qty * 7.00; // Base cost for prints
