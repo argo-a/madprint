@@ -187,9 +187,9 @@ function groupByOrder(filteredData) {
 function calculateCosts(orders) {
     const results = Object.values(orders).map(order => {
         const qty = order.items.reduce((sum, item) => sum + (parseInt(item.quantity_shipped) || 0), 0);
-        const unitCost = 7.00; // Always $7.00 per print
+        const unitCost = 6.30; // Always $6.30 per print
         const additionalShipping = qty === 1 ? 0.00 : 0.25; // $0.25 fee for multi-item orders
-        const printsCost = qty * 7.00; // Base cost for prints
+        const printsCost = qty * 6.30; // Base cost for prints
         const totalCost = printsCost + additionalShipping; // Total = prints + shipping fee
         
         // Get the shipped date from the first item (all items in same order have same shipped_at)
@@ -290,20 +290,89 @@ function displayResults(results, selectedMonth, selectedYear) {
     ordersTableContent.innerHTML = tableHTML;
 }
 
-// Download Excel report
-function downloadExcel() {
+// Download Dimona Invoice (with $7.00 pricing)
+function downloadDimonaInvoice() {
     if (processedResults.length === 0) {
         alert('No data to download. Please generate an invoice first.');
         return;
     }
     
-    // Calculate totals
+    // Recalculate with $7.00 pricing for Dimona invoice
+    const dimonaResults = processedResults.map(order => {
+        const unitCost = 7.00;
+        const printsCost = order.qty * 7.00;
+        const additionalShipping = order.qty === 1 ? 0.00 : 0.25;
+        const totalCost = printsCost + additionalShipping;
+        
+        return {
+            ...order,
+            unitCost: unitCost,
+            printsCost: printsCost,
+            totalCost: totalCost
+        };
+    });
+    
+    // Calculate totals with $7.00 pricing
+    const totalPrints = dimonaResults.reduce((sum, order) => sum + order.qty, 0);
+    const totalAmount = dimonaResults.reduce((sum, order) => sum + order.totalCost, 0);
+    
+    // Prepare data for Excel
+    const excelData = [
+        ['Dimona Invoice Summary'],
+        ['Generated on:', new Date().toLocaleDateString()],
+        [''],
+        ['SUMMARY'],
+        ['Total Orders:', dimonaResults.length],
+        ['Total Prints:', totalPrints],
+        ['Total Amount Owed:', totalAmount],
+        [''],
+        ['Order Number', 'Ship Date', 'Qty', 'Unit Cost', 'Additional Shipping', 'Total Cost']
+    ];
+    
+    // Add order data
+    dimonaResults.forEach(order => {
+        excelData.push([
+            order.orderNumber,
+            order.simplifiedShipDate,
+            order.qty,
+            order.unitCost,
+            order.additionalShipping,
+            order.totalCost
+        ]);
+    });
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    
+    // Style the header
+    ws['A1'] = { v: 'Dimona Invoice Summary', t: 's', s: { font: { bold: true, sz: 16 } } };
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
+    
+    // Generate filename with current date
+    const today = new Date();
+    const filename = `MaddInvoice_${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}.xlsx`;
+    
+    // Download file
+    XLSX.writeFile(wb, filename);
+}
+
+// Download Discounted Invoice (with $6.30 pricing)
+function downloadDiscountedInvoice() {
+    if (processedResults.length === 0) {
+        alert('No data to download. Please generate an invoice first.');
+        return;
+    }
+    
+    // Use existing processedResults which already have $6.30 pricing
     const totalPrints = processedResults.reduce((sum, order) => sum + order.qty, 0);
     const totalAmount = processedResults.reduce((sum, order) => sum + order.totalCost, 0);
     
     // Prepare data for Excel
     const excelData = [
-        ['Dimona Invoice Summary'],
+        ['Discounted Invoice Summary ($6.30)'],
         ['Generated on:', new Date().toLocaleDateString()],
         [''],
         ['SUMMARY'],
@@ -331,14 +400,14 @@ function downloadExcel() {
     const ws = XLSX.utils.aoa_to_sheet(excelData);
     
     // Style the header
-    ws['A1'] = { v: 'Dimona Invoice Summary', t: 's', s: { font: { bold: true, sz: 16 } } };
+    ws['A1'] = { v: 'Discounted Invoice Summary ($6.30)', t: 's', s: { font: { bold: true, sz: 16 } } };
     
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
     
     // Generate filename with current date
     const today = new Date();
-    const filename = `MaddInvoice_${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}.xlsx`;
+    const filename = `DiscountedInvoice_${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}.xlsx`;
     
     // Download file
     XLSX.writeFile(wb, filename);
