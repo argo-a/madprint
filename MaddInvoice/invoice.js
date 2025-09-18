@@ -95,7 +95,7 @@ function validateDataStructure() {
     if (orderData.length === 0) return;
     
     const firstRow = orderData[0];
-    const requiredColumns = ['shipped_at', 'id', 'number', 'quantity_shipped'];
+    const requiredColumns = ['shipped_at', 'id', 'number', 'quantity'];
     const missingColumns = requiredColumns.filter(col => !(col in firstRow));
     
     if (missingColumns.length > 0) {
@@ -135,16 +135,15 @@ function generateInvoice() {
             return;
         }
         
-        // Group by order and calculate costs
-        const groupedOrders = groupByOrder(filteredData);
-        const invoiceResults = calculateCosts(groupedOrders);
+        // Calculate costs for individual line items
+        const invoiceResults = calculateCosts(filteredData);
         
         processedResults = invoiceResults;
         
         // Display results
         displayResults(invoiceResults, selectedMonth, selectedYear);
         
-        filterStatus.innerHTML = `<div class="success-message">✅ Invoice generated successfully! Found ${invoiceResults.length} orders.</div>`;
+        filterStatus.innerHTML = `<div class="success-message">✅ Invoice generated successfully! Found ${invoiceResults.lineItems.length} line items.</div>`;
         
         // Show results section and hide placeholder
         document.getElementById('resultsSection').style.display = 'block';
@@ -165,47 +164,24 @@ function filterByMonth(data, selectedMonth, selectedYear) {
     });
 }
 
-// Group orders by ID and number combination
-function groupByOrder(filteredData) {
-    const orders = {};
-    
-    filteredData.forEach(row => {
-        const orderKey = `${row.id}-${row.number}`;
-        
-        if (!orders[orderKey]) {
-            orders[orderKey] = {
-                orderNumber: row.number,
-                id: row.id,
-                items: []
-            };
-        }
-        
-        orders[orderKey].items.push(row);
-    });
-    
-    return orders;
-}
 
 // Calculate costs based on business rules
-function calculateCosts(orders) {
-    const results = Object.values(orders).map(order => {
-        const qty = order.items.reduce((sum, item) => sum + (parseInt(item.quantity_shipped) || 0), 0);
+function calculateCosts(filteredData) {
+    // First, process individual line items for print costs (no shipping fee per item)
+    const lineItems = filteredData.map(row => {
+        const qty = parseInt(row.quantity) || 0; // Use quantity field directly
         const unitCost = 6.30; // Always $6.30 per print
-        const additionalShipping = qty === 1 ? 0.00 : 0.25; // $0.25 fee for multi-item orders
-        const printsCost = qty * 6.30; // Base cost for prints
-        const totalCost = printsCost + additionalShipping; // Total = prints + shipping fee
+        const printsCost = qty * 6.30; // Base cost for prints only
         
-        // Get the shipped date from the first item (all items in same order have same shipped_at)
-        const shippedAt = order.items[0].shipped_at;
+        const shippedAt = row.shipped_at;
         const shippedDate = new Date(shippedAt);
         
         return {
-            orderNumber: order.orderNumber,
+            orderNumber: row.number,
+            orderId: row.id,
             qty: qty,
             unitCost: unitCost,
-            additionalShipping: additionalShipping,
             printsCost: printsCost,
-            totalCost: totalCost,
             shippedAt: shippedAt,
             shippedDate: shippedDate,
             simplifiedShipDate: shippedDate.toLocaleDateString('en-US', {
@@ -216,8 +192,30 @@ function calculateCosts(orders) {
         };
     });
     
-    // Sort by shipped date, latest to oldest
-    results.sort((a, b) => b.shippedDate - a.shippedDate);
+    // Group by order ID to count orders with multiple items
+    const orderGroups = {};
+    filteredData.forEach(row => {
+        const orderId = row.id;
+        if (!orderGroups[orderId]) {
+            orderGroups[orderId] = [];
+        }
+        orderGroups[orderId].push(row);
+    });
+    
+    // Count orders with multiple line items
+    const multiItemOrders = Object.values(orderGroups).filter(items => items.length > 1);
+    const multiItemOrderCount = multiItemOrders.length;
+    const totalShippingFee = multiItemOrderCount * 0.25;
+    
+    // Add shipping fee information to results
+    const results = {
+        lineItems: lineItems,
+        multiItemOrderCount: multiItemOrderCount,
+        totalShippingFee: totalShippingFee
+    };
+    
+    // Sort line items by shipped date, latest to oldest
+    results.lineItems.sort((a, b) => b.shippedDate - a.shippedDate);
     
     return results;
 }
@@ -229,9 +227,10 @@ function displayResults(results, selectedMonth, selectedYear) {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
-    // Calculate totals
-    const totalPrints = results.reduce((sum, order) => sum + order.qty, 0);
-    const totalAmount = results.reduce((sum, order) => sum + order.totalCost, 0);
+    // Calculate totals from line items
+    const totalPrints = results.lineItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalPrintsCost = results.lineItems.reduce((sum, item) => sum + item.printsCost, 0);
+    const totalAmount = totalPrintsCost + results.totalShippingFee;
     
     // Display summary
     const summaryContent = document.getElementById('summaryContent');
@@ -239,12 +238,20 @@ function displayResults(results, selectedMonth, selectedYear) {
         <div class="month-year-display">${monthNames[selectedMonth]} ${selectedYear}</div>
         <div class="summary-stats">
             <div class="stat-item">
-                <div class="stat-value">${results.length}</div>
-                <div class="stat-label">Total Orders</div>
+                <div class="stat-value">${results.lineItems.length}</div>
+                <div class="stat-label">Total Line Items</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">${totalPrints}</div>
                 <div class="stat-label">Total Prints</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${results.multiItemOrderCount}</div>
+                <div class="stat-label">Multi-Item Orders</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">$${results.totalShippingFee.toFixed(2)}</div>
+                <div class="stat-label">Shipping Fee</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">$${totalAmount.toFixed(2)}</div>
@@ -264,25 +271,41 @@ function displayResults(results, selectedMonth, selectedYear) {
                         <th>Ship Date</th>
                         <th>Qty</th>
                         <th>Unit Cost</th>
-                        <th>Additional Shipping</th>
-                        <th>Total Cost</th>
+                        <th>Print Cost</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
     
-    results.forEach(order => {
+    results.lineItems.forEach(item => {
         tableHTML += `
             <tr>
-                <td>${order.orderNumber}</td>
-                <td>${order.simplifiedShipDate}</td>
-                <td>${order.qty}</td>
-                <td>$${order.unitCost.toFixed(2)}</td>
-                <td>$${order.additionalShipping.toFixed(2)}</td>
-                <td class="cost-cell">$${order.totalCost.toFixed(2)}</td>
+                <td>${item.orderNumber}</td>
+                <td>${item.simplifiedShipDate}</td>
+                <td>${item.qty}</td>
+                <td>$${item.unitCost.toFixed(2)}</td>
+                <td class="cost-cell">$${item.printsCost.toFixed(2)}</td>
             </tr>
         `;
     });
+    
+    // Add shipping fee row if there are multi-item orders
+    if (results.multiItemOrderCount > 0) {
+        tableHTML += `
+            <tr class="shipping-fee-row" style="border-top: 2px solid #ddd; font-weight: bold;">
+                <td colspan="4">Shipping Fee (${results.multiItemOrderCount} multi-item orders × $0.25)</td>
+                <td class="cost-cell">$${results.totalShippingFee.toFixed(2)}</td>
+            </tr>
+        `;
+    }
+    
+    // Add total row
+    tableHTML += `
+        <tr class="total-row" style="border-top: 2px solid #333; font-weight: bold; background-color: #f5f5f5;">
+            <td colspan="4">TOTAL</td>
+            <td class="cost-cell">$${totalAmount.toFixed(2)}</td>
+        </tr>
+    `;
     
     tableHTML += `
                 </tbody>
@@ -295,61 +318,68 @@ function displayResults(results, selectedMonth, selectedYear) {
 
 // Download Dimona Invoice (with $7.00 pricing)
 function downloadDimonaInvoice() {
-    if (processedResults.length === 0) {
+    if (!processedResults || !processedResults.lineItems || processedResults.lineItems.length === 0) {
         alert('No data to download. Please generate an invoice first.');
         return;
     }
     
     // Recalculate with $7.00 pricing for Dimona invoice
-    const dimonaResults = processedResults.map(order => {
+    const dimonaLineItems = processedResults.lineItems.map(item => {
         const unitCost = 7.00;
-        const printsCost = order.qty * 7.00;
-        const additionalShipping = order.qty === 1 ? 0.00 : 0.25;
-        const totalCost = printsCost + additionalShipping;
+        const printsCost = item.qty * 7.00;
         
         return {
-            ...order,
+            ...item,
             unitCost: unitCost,
-            printsCost: printsCost,
-            totalCost: totalCost
+            printsCost: printsCost
         };
     });
     
     // Calculate totals with $7.00 pricing
-    const totalPrints = dimonaResults.reduce((sum, order) => sum + order.qty, 0);
-    const totalAmount = dimonaResults.reduce((sum, order) => sum + order.totalCost, 0);
+    const totalPrints = dimonaLineItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalPrintsCost = dimonaLineItems.reduce((sum, item) => sum + item.printsCost, 0);
+    const totalAmount = totalPrintsCost + processedResults.totalShippingFee;
     
     // Prepare data for Excel
     const excelData = [
-        ['Dimona Invoice Summary'],
+        ['Dimona Invoice Summary ($7.00)'],
         ['Generated on:', new Date().toLocaleDateString()],
         [''],
         ['SUMMARY'],
-        ['Total Orders:', dimonaResults.length],
+        ['Total Line Items:', dimonaLineItems.length],
         ['Total Prints:', totalPrints],
+        ['Multi-Item Orders:', processedResults.multiItemOrderCount],
+        ['Shipping Fee:', processedResults.totalShippingFee],
         ['Total Amount Owed:', totalAmount],
         [''],
-        ['Order Number', 'Ship Date', 'Qty', 'Unit Cost', 'Additional Shipping', 'Total Cost']
+        ['Order Number', 'Ship Date', 'Qty', 'Unit Cost', 'Print Cost']
     ];
     
-    // Add order data
-    dimonaResults.forEach(order => {
+    // Add line item data
+    dimonaLineItems.forEach(item => {
         excelData.push([
-            order.orderNumber,
-            order.simplifiedShipDate,
-            order.qty,
-            order.unitCost,
-            order.additionalShipping,
-            order.totalCost
+            item.orderNumber,
+            item.simplifiedShipDate,
+            item.qty,
+            item.unitCost,
+            item.printsCost
         ]);
     });
+    
+    // Add shipping fee row
+    if (processedResults.multiItemOrderCount > 0) {
+        excelData.push(['', '', '', 'Shipping Fee:', processedResults.totalShippingFee]);
+    }
+    
+    // Add total row
+    excelData.push(['', '', '', 'TOTAL:', totalAmount]);
     
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(excelData);
     
     // Style the header
-    ws['A1'] = { v: 'Dimona Invoice Summary', t: 's', s: { font: { bold: true, sz: 16 } } };
+    ws['A1'] = { v: 'Dimona Invoice Summary ($7.00)', t: 's', s: { font: { bold: true, sz: 16 } } };
     
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
@@ -364,14 +394,15 @@ function downloadDimonaInvoice() {
 
 // Download Discounted Invoice (with $6.30 pricing)
 function downloadDiscountedInvoice() {
-    if (processedResults.length === 0) {
+    if (!processedResults || !processedResults.lineItems || processedResults.lineItems.length === 0) {
         alert('No data to download. Please generate an invoice first.');
         return;
     }
     
     // Use existing processedResults which already have $6.30 pricing
-    const totalPrints = processedResults.reduce((sum, order) => sum + order.qty, 0);
-    const totalAmount = processedResults.reduce((sum, order) => sum + order.totalCost, 0);
+    const totalPrints = processedResults.lineItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalPrintsCost = processedResults.lineItems.reduce((sum, item) => sum + item.printsCost, 0);
+    const totalAmount = totalPrintsCost + processedResults.totalShippingFee;
     
     // Prepare data for Excel
     const excelData = [
@@ -379,24 +410,33 @@ function downloadDiscountedInvoice() {
         ['Generated on:', new Date().toLocaleDateString()],
         [''],
         ['SUMMARY'],
-        ['Total Orders:', processedResults.length],
+        ['Total Line Items:', processedResults.lineItems.length],
         ['Total Prints:', totalPrints],
+        ['Multi-Item Orders:', processedResults.multiItemOrderCount],
+        ['Shipping Fee:', processedResults.totalShippingFee],
         ['Total Amount Owed:', totalAmount],
         [''],
-        ['Order Number', 'Ship Date', 'Qty', 'Unit Cost', 'Additional Shipping', 'Total Cost']
+        ['Order Number', 'Ship Date', 'Qty', 'Unit Cost', 'Print Cost']
     ];
     
-    // Add order data
-    processedResults.forEach(order => {
+    // Add line item data
+    processedResults.lineItems.forEach(item => {
         excelData.push([
-            order.orderNumber,
-            order.simplifiedShipDate,
-            order.qty,
-            order.unitCost,
-            order.additionalShipping,
-            order.totalCost
+            item.orderNumber,
+            item.simplifiedShipDate,
+            item.qty,
+            item.unitCost,
+            item.printsCost
         ]);
     });
+    
+    // Add shipping fee row
+    if (processedResults.multiItemOrderCount > 0) {
+        excelData.push(['', '', '', 'Shipping Fee:', processedResults.totalShippingFee]);
+    }
+    
+    // Add total row
+    excelData.push(['', '', '', 'TOTAL:', totalAmount]);
     
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
