@@ -15,111 +15,99 @@
         </div>
         
         <div class="content">
-            <!-- Upload Section -->
-            <div class="upload-section" id="uploadSection">
-                <h3>📄 Upload CSV with Google Drive URLs</h3>
-                <p>Select your CSV file containing Google Drive URLs in the notes column</p>
-                <br>
-                <input type="file" id="csvFile" class="file-input" accept=".csv">
-                <button class="upload-button" onclick="document.getElementById('csvFile').click()">
-                    Choose CSV File
-                </button>
-                <div id="uploadStatus"></div>
-            </div>
-
-            <!-- Processing Section -->
-            <div class="processing-section" id="processingSection" style="display: none;">
-                <h3>⚙️ File Processing Options</h3>
-                <div class="processing-options">
-                    <div class="option-card">
-                        <h4>🔄 Rotation Settings</h4>
-                        <p>All artwork will be rotated 90 degrees clockwise for optimal printing</p>
-                        <div class="rotation-preview">
-                            <div class="rotation-demo">
-                                <div class="original">Original</div>
-                                <div class="arrow">→</div>
-                                <div class="rotated">Rotated 90°</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="option-card">
-                        <h4>📊 Processing Summary</h4>
-                        <div id="processingSummary">
-                            <div class="summary-item">
-                                <span class="label">Files Found:</span>
-                                <span id="filesFound" class="value">0</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Estimated Size:</span>
-                                <span id="estimatedSize" class="value">Calculating...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="start-processing">
-                    <button class="start-button" onclick="startProcessing()" id="startButton" disabled>
-                        🚀 Start Processing Files
+            <!-- Left Column: Controls and Settings -->
+            <div class="left-column">
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <h3>📄 Upload CSV with Google Drive URLs</h3>
+                    <p>Select your CSV file containing Google Drive URLs in the notes column</p>
+                    <br>
+                    <input type="file" id="csvFile" class="file-input" accept=".csv">
+                    <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                        Choose CSV File
                     </button>
+                    <div id="uploadStatus"></div>
                 </div>
-            </div>
 
-            <!-- Progress Section -->
-            <div class="progress-section" id="progressSection" style="display: none;">
-                <h3>📈 Processing Progress</h3>
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
+                <!-- Processing Section -->
+                <div class="processing-section" id="processingSection" style="display: none;">
+                    <h3>⚙️ File Processing Options</h3>
+                    <div class="processing-options">
+                        <div class="option-card">
+                            <h4>🔄 Rotation Settings</h4>
+                            <p>All artwork will be rotated 90 degrees clockwise for optimal printing</p>
+                            <div class="rotation-preview">
+                                <div class="rotation-demo">
+                                    <div class="original">Original</div>
+                                    <div class="arrow">→</div>
+                                    <div class="rotated">Rotated 90°</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="option-card">
+                            <h4>📊 Processing Summary</h4>
+                            <div id="processingSummary">
+                                <div class="summary-item">
+                                    <span class="label">Files Found:</span>
+                                    <span id="filesFound" class="value">0</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="label">Estimated Size:</span>
+                                    <span id="estimatedSize" class="value">Calculating...</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="progress-text" id="progressText">0% Complete</div>
+
+                    <div class="start-processing">
+                        <button class="start-button" onclick="startProcessing()" id="startButton" disabled>
+                            🚀 Start Processing Files
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="progress-details">
-                    <div class="progress-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Processed:</span>
-                            <span id="processedCount" class="stat-value">0</span>
+
+                <!-- Progress Section -->
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <h3>📈 Processing Progress</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Total:</span>
-                            <span id="totalCount" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Status:</span>
-                            <span id="jobStatus" class="stat-value">Starting...</span>
-                        </div>
+                        <div class="progress-text" id="progressText">0% Complete</div>
                     </div>
                     
-                    <div class="current-file" id="currentFile">
-                        Preparing to start...
+                    <div class="progress-details">
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Processed:</span>
+                                <span id="processedCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total:</span>
+                                <span id="totalCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Status:</span>
+                                <span id="jobStatus" class="stat-value">Starting...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="current-file" id="currentFile">
+                            Preparing to start...
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Results Section -->
-            <div id="resultsSection" class="results-section" style="display: none;">
-                <div class="results-header">
-                    <h3>✅ Processing Complete</h3>
-                    <div class="results-actions">
-                        <button class="download-all-button" onclick="downloadAllFiles()">📥 Download All Files</button>
-                        <button class="new-job-button" onclick="startNewJob()">🔄 Process New Files</button>
+            <!-- Right Column: Large File Previews and Results -->
+            <div class="right-column">
+                <div id="resultsSection" class="results-section">
+                    <div style="text-align: center; color: #666; padding: 60px 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🎨</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Large File Preview</h3>
+                        <p>Upload a CSV file to see processed artwork files displayed here in large format with download options.</p>
                     </div>
-                </div>
-                
-                <div class="results-summary">
-                    <h4>📊 Processing Summary</h4>
-                    <div id="resultsSummaryContent"></div>
-                </div>
-
-                <div class="files-grid">
-                    <h4>📁 Processed Files</h4>
-                    <div class="files-controls">
-                        <button class="select-all-button" onclick="selectAllFiles()">☑️ Select All</button>
-                        <button class="select-none-button" onclick="selectNoneFiles()">☐ Select None</button>
-                        <button class="download-selected-button" onclick="downloadSelectedFiles()" disabled>📥 Download Selected</button>
-                    </div>
-                    <div id="filesGridContent" class="files-list"></div>
                 </div>
             </div>
         </div>
@@ -150,7 +138,7 @@
                 Streamline your print business operations with our integrated tools
             </p>
             <div style="margin-top: 15px; color: #999; font-size: 0.8rem;">
-                FILE PREP v2.8.13
+                FILE PREP v2.8.14
             </div>
         </div>
     </footer>

@@ -12,12 +12,13 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     background: white;
     border-radius: 15px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     overflow: hidden;
+    min-height: 90vh;
 }
 
 .header {
@@ -34,17 +35,31 @@ body {
 }
 
 .content {
-    padding: 40px;
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    min-height: calc(90vh - 120px);
+}
+
+.left-column {
+    background: #f8f9fa;
+    padding: 30px;
+    border-right: 1px solid #dee2e6;
+    overflow-y: auto;
+}
+
+.right-column {
+    padding: 30px;
+    overflow-y: auto;
 }
 
 /* Upload Section */
 .upload-section {
-    background: #f8f9fa;
+    background: white;
     border: 2px dashed #dee2e6;
     border-radius: 10px;
-    padding: 40px;
+    padding: 25px;
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     transition: all 0.3s ease;
 }
 
@@ -61,9 +76,9 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    padding: 15px 30px;
+    padding: 12px 25px;
     border-radius: 25px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: transform 0.3s ease;
 }
@@ -74,10 +89,11 @@ body {
 
 /* Scanning Section */
 .scanning-section {
-    background: #f8f9fa;
-    padding: 30px;
+    background: white;
+    padding: 20px;
     border-radius: 10px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
 }
 
 .scan-controls {
@@ -260,7 +276,7 @@ body {
 
 /* Results Section */
 .results-section {
-    margin-top: 30px;
+    margin-top: 0;
 }
 
 .results-header {
@@ -499,7 +515,13 @@ body {
     }
     
     .content {
-        padding: 20px;
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    
+    .left-column {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
     }
     
     .scan-input-group {

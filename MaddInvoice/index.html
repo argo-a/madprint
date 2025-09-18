@@ -16,58 +16,53 @@
         </div>
         
         <div class="content">
-            <!-- Upload Section -->
-            <div class="upload-section" id="uploadSection">
-                <h3>📄 Upload Production Orders File</h3>
-                <p>Select your Excel or CSV file containing production order data</p>
-                <br>
-                <input type="file" id="dataFile" class="file-input" accept=".csv,.xlsx,.xls">
-                <button class="upload-button" onclick="document.getElementById('dataFile').click()">
-                    Choose File
-                </button>
-                <div id="uploadStatus"></div>
+            <!-- Left Column: Controls and Settings -->
+            <div class="left-column">
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <h3>📄 Upload Production Orders File</h3>
+                    <p>Select your Excel or CSV file containing production order data</p>
+                    <br>
+                    <input type="file" id="dataFile" class="file-input" accept=".csv,.xlsx,.xls">
+                    <button class="upload-button" onclick="document.getElementById('dataFile').click()">
+                        Choose File
+                    </button>
+                    <div id="uploadStatus"></div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="filter-section" id="filterSection" style="display: none;">
+                    <h3>📅 Select Month for Invoice (2025)</h3>
+                    <div class="filter-controls">
+                        <select id="monthSelect" class="month-select">
+                            <option value="">Select Month...</option>
+                            <option value="0" disabled class="disabled-month">January</option>
+                            <option value="1" disabled class="disabled-month">February</option>
+                            <option value="2" disabled class="disabled-month">March</option>
+                            <option value="3" disabled class="disabled-month">April</option>
+                            <option value="4" disabled class="disabled-month">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                        <button class="generate-button" onclick="generateInvoice()">Generate Invoice</button>
+                    </div>
+                    <div id="filterStatus"></div>
+                </div>
             </div>
 
-            <!-- Filter Section -->
-            <div class="filter-section" id="filterSection" style="display: none;">
-                <h3>📅 Select Month for Invoice (2025)</h3>
-                <div class="filter-controls">
-                    <select id="monthSelect" class="month-select">
-                        <option value="">Select Month...</option>
-                        <option value="0" disabled class="disabled-month">January</option>
-                        <option value="1" disabled class="disabled-month">February</option>
-                        <option value="2" disabled class="disabled-month">March</option>
-                        <option value="3" disabled class="disabled-month">April</option>
-                        <option value="4" disabled class="disabled-month">May</option>
-                        <option value="5">June</option>
-                        <option value="6">July</option>
-                        <option value="7">August</option>
-                        <option value="8">September</option>
-                        <option value="9">October</option>
-                        <option value="10">November</option>
-                        <option value="11">December</option>
-                    </select>
-                    <button class="generate-button" onclick="generateInvoice()">Generate Invoice</button>
-                </div>
-                <div id="filterStatus"></div>
-            </div>
-
-            <!-- Results Section -->
-            <div id="resultsSection" class="results-section" style="display: none;">
-                <div class="results-header">
-                    <h3>📊 Invoice Results</h3>
-                    <button class="download-button" onclick="downloadDimonaInvoice()">📥 Dimona Invoice</button>
-                    <button class="download-button" onclick="downloadDiscountedInvoice()" style="margin-left: 10px;">📥 Discounted Invoice ($6.30)</button>
-                </div>
-                
-                <div class="summary-card">
-                    <h4>Summary</h4>
-                    <div id="summaryContent"></div>
-                </div>
-
-                <div class="orders-table">
-                    <h4>Order Details</h4>
-                    <div id="ordersTableContent"></div>
+            <!-- Right Column: Large Invoice Preview and Results -->
+            <div class="right-column">
+                <div id="resultsSection" class="results-section">
+                    <div style="text-align: center; color: #666; padding: 60px 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">💰</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Large Invoice Preview</h3>
+                        <p>Upload a production orders file and select a month to see invoice results displayed here in large format with detailed order tables.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,7 +90,7 @@
                 Streamline your print business operations with our integrated tools
             </p>
             <div style="margin-top: 15px; color: #999; font-size: 0.8rem;">
-                MaddInvoice v2.8.13
+                MaddInvoice v2.8.14
             </div>
         </div>
     </footer>
