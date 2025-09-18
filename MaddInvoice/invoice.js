@@ -340,10 +340,18 @@ function downloadDimonaInvoice() {
     const totalPrintsCost = dimonaLineItems.reduce((sum, item) => sum + item.printsCost, 0);
     const totalAmount = totalPrintsCost + processedResults.totalShippingFee;
     
+    // Get month name from first line item's ship date
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const firstShipDate = new Date(dimonaLineItems[0].shippedAt);
+    const monthName = monthNames[firstShipDate.getMonth()];
+    
     // Prepare data for Excel
     const excelData = [
         ['Dimona Invoice Summary ($7.00)'],
-        ['Generated on:', new Date().toLocaleDateString()],
+        ['MONTH:', monthName],
         [''],
         ['SUMMARY'],
         ['Total Line Items:', dimonaLineItems.length],
@@ -404,10 +412,18 @@ function downloadDiscountedInvoice() {
     const totalPrintsCost = processedResults.lineItems.reduce((sum, item) => sum + item.printsCost, 0);
     const totalAmount = totalPrintsCost + processedResults.totalShippingFee;
     
+    // Get month name from first line item's ship date
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const firstShipDate = new Date(processedResults.lineItems[0].shippedAt);
+    const monthName = monthNames[firstShipDate.getMonth()];
+    
     // Prepare data for Excel
     const excelData = [
         ['Discounted Invoice Summary ($6.30)'],
-        ['Generated on:', new Date().toLocaleDateString()],
+        ['MONTH:', monthName],
         [''],
         ['SUMMARY'],
         ['Total Line Items:', processedResults.lineItems.length],
