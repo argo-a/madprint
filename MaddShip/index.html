@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaddShip - Shipping Management</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="ship.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚢 MaddShip</h1>
+            <p>Shipping management with image-based order processing</p>
+        </div>
+        
+        <div class="content">
+            <!-- Left Column: Controls and Settings -->
+            <div class="left-column">
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <h3>📄 Upload Orders CSV</h3>
+                    <p>Select your CSV file containing order data with Google Drive URLs</p>
+                    <br>
+                    <input type="file" id="csvFile" class="file-input" accept=".csv">
+                    <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                        Choose CSV File
+                    </button>
+                    <div id="uploadStatus"></div>
+                </div>
+
+                <!-- Statistics Section -->
+                <div class="stats-section" id="statsSection" style="display: none;">
+                    <h3>📊 Shipping Statistics</h3>
+                    <div class="stats-content">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalCount">0</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number shipped" id="shippedCount">0</div>
+                            <div class="stat-label">Shipped</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number pending" id="pendingCount">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sort Options -->
+                <div class="sort-section" id="sortSection" style="display: none;">
+                    <h3>🔄 Sort Options</h3>
+                    <div class="sort-controls">
+                        <label class="radio-option">
+                            <input type="radio" name="sortBy" value="date" checked>
+                            <span>By Date (Oldest First)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sortBy" value="imageId">
+                            <span>By Image ID</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Filter Options -->
+                <div class="filter-section" id="filterSection" style="display: none;">
+                    <h3>🔍 Filter Options</h3>
+                    <div class="filter-controls">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="hideShipped">
+                            <span>Hide Shipped Items</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Compact Image Grid -->
+            <div class="right-column">
+                <div id="shippingGrid" class="shipping-grid">
+                    <div class="placeholder-message">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🚢</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Shipping Grid</h3>
+                        <p>Upload a CSV file to see orders displayed in a compact grid format. Click images to select and use LABEL buttons to ship items.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="warningModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Shipping Warning</h3>
+                <span class="close-modal" onclick="closeWarningModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p><strong>Warning! Check to ensure you have not already shipped this item.</strong></p>
+                <div id="warningDetails"></div>
+                <p>Do you want to proceed to create the shipping label?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-button" onclick="closeWarningModal()">Cancel</button>
+                <button class="proceed-button" id="proceedButton">Proceed to Label</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Navigation -->
+    <footer style="background: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #dee2e6; margin-top: 40px;">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h4 style="color: #667eea; margin-bottom: 20px; font-size: 1.2rem;">🚀 MaddPrints App Suite</h4>
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 20px;">
+                <a href="/" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #dee2e6; transition: all 0.3s ease;">
+                    🏠 Home
+                </a>
+                <a href="/view-urls.html" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #dee2e6; transition: all 0.3s ease;">
+                    📋 View URLs
+                </a>
+                <a href="/MaddInvoice/" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #dee2e6; transition: all 0.3s ease;">
+                    📄 Invoice Generator
+                </a>
+                <a href="/Duplicator/" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #dee2e6; transition: all 0.3s ease;">
+                    🔍 Duplicator
+                </a>
+                <a href="/FilePrep/" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #dee2e6; transition: all 0.3s ease;">
+                    🎨 FILE PREP
+                </a>
+                <a href="/MaddShip/" style="color: #667eea; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: #667eea; color: white; border: 1px solid #667eea;">
+                    🚢 MaddShip
+                </a>
+            </div>
+            <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                Streamline your print business operations with our integrated tools
+            </p>
+            <div style="margin-top: 15px; color: #999; font-size: 0.8rem;">
+                MaddShip v2.8.14
+            </div>
+        </div>
+    </footer>
+
+    <script src="ship.js"></script>
+</body>
+</html>

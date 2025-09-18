@@ -1,0 +1,458 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    min-height: 90vh;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 300;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    min-height: calc(90vh - 120px);
+}
+
+.left-column {
+    background: #f8f9fa;
+    padding: 30px;
+    border-right: 1px solid #dee2e6;
+    overflow-y: auto;
+}
+
+.right-column {
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* Upload Section */
+.upload-section {
+    background: white;
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 25px;
+    text-align: center;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+}
+
+.upload-section:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.file-input {
+    display: none;
+}
+
+.upload-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.upload-button:hover {
+    transform: translateY(-2px);
+}
+
+/* Statistics Section */
+.stats-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.stats-section h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.stat-number {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-number.shipped {
+    color: #28a745;
+}
+
+.stat-number.pending {
+    color: #ffc107;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Sort Section */
+.sort-section, .filter-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.sort-section h3, .filter-section h3 {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.sort-controls, .filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-option, .checkbox-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+}
+
+.radio-option:hover, .checkbox-option:hover {
+    background: #f8f9fa;
+}
+
+.radio-option input, .checkbox-option input {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.radio-option span, .checkbox-option span {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Shipping Grid */
+.shipping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.placeholder-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    padding: 60px 20px;
+}
+
+/* Shipping Card */
+.shipping-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.shipping-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.shipping-card.shipped {
+    background: #d4edda;
+    border-color: #28a745;
+}
+
+.shipping-card.selected {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+}
+
+.card-info {
+    margin-bottom: 15px;
+}
+
+.card-order-number {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.card-customer {
+    color: #666;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.card-status {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-shipped {
+    color: #28a745;
+}
+
+.status-pending {
+    color: #ffc107;
+}
+
+.label-button {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.label-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.label-button.shipped {
+    background: #28a745;
+}
+
+.label-button.shipped:hover {
+    background: #218838;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-header h3 {
+    color: #dc3545;
+    margin: 0;
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.cancel-button, .proceed-button {
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.cancel-button {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-button:hover {
+    background: #5a6268;
+}
+
+.proceed-button {
+    background: #dc3545;
+    color: white;
+}
+
+.proceed-button:hover {
+    background: #c82333;
+}
+
+/* Messages */
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #28a745;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #dc3545;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .shipping-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .content {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    
+    .left-column {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .shipping-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .card-image {
+        height: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .shipping-grid {
+        grid-template-columns: 1fr;
+    }
+}
