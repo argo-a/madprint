@@ -264,6 +264,31 @@
             color: #666;
         }
 
+        /* View URLs Section */
+        .view-urls-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #667eea;
+        }
+
+        .view-urls-section h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .view-urls-section p {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
         .results-section {
             margin-top: 0;
         }
@@ -468,6 +493,15 @@
                     <div class="stats-content" id="statsContent"></div>
                 </div>
 
+                <!-- View All URLs Section -->
+                <div class="view-urls-section" id="viewUrlsSection">
+                    <h3>📋 View All URLs</h3>
+                    <p>Access the complete URL viewer to see all Google Drive links from your orders</p>
+                    <a href="/view-urls.html" target="_blank" class="view-urls-button" id="viewUrlsButton">
+                        📋 Open URL Viewer
+                    </a>
+                </div>
+
                 <!-- Main Search Section - Compact for Left Column -->
                 <div class="search-section">
                     <h2>🔍 Search by Tracking Number</h2>
@@ -499,7 +533,7 @@
 
     <footer style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
         <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; font-weight: 500;">
-            MaddPrints v2.8.17 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a> | <a href="/FilePrep/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🎨 FILE PREP</a> | <a href="/MaddShip/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🚢 MaddShip</a>
+            MaddPrints v2.8.18 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/Duplicator/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🔍 Duplicator</a> | <a href="/FilePrep/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🎨 FILE PREP</a> | <a href="/MaddShip/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🚢 MaddShip</a>
         </div>
     </footer>
 
@@ -631,8 +665,8 @@
                     content.classList.remove('expanded');
                     arrow.classList.remove('expanded');
                     
-                    // Add "View All URLs" button
-                    addViewAllUrlsButton();
+                    // Show "View All URLs" section and update button
+                    showViewAllUrlsSection();
                     
                     // Show previous uploads
                     showPreviousUploads();
@@ -729,8 +763,8 @@
             content.classList.remove('expanded');
             arrow.classList.remove('expanded');
             
-            // Add "View All URLs" button
-            addViewAllUrlsButton();
+            // Show "View All URLs" section and update button
+            showViewAllUrlsSection();
             
             // Show previous uploads again
             showPreviousUploads();
@@ -773,9 +807,7 @@
             `;
         }
 
-        function addViewAllUrlsButton() {
-            const uploadStatus = document.getElementById('uploadStatus');
-            
+        function showViewAllUrlsSection() {
             // Extract all Google Drive URLs from CSV
             const allUrls = [];
             csvData.forEach(order => {
@@ -801,15 +833,9 @@
                 // Store URLs in localStorage for the new page
                 localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
                 
-                // Add the button to upload status
-                const currentContent = uploadStatus.innerHTML;
-                uploadStatus.innerHTML = currentContent + `
-                    <div style="margin-top: 15px; text-align: center;">
-                        <a href="/view-urls.html" target="_blank" class="view-urls-button">
-                            📋 View All URLs (${allUrls.length} found)
-                        </a>
-                    </div>
-                `;
+                // Show the View URLs section and update button text
+                document.getElementById('viewUrlsSection').style.display = 'block';
+                document.getElementById('viewUrlsButton').textContent = `📋 Open URL Viewer (${allUrls.length} found)`;
             }
         }
 
