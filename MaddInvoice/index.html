@@ -57,7 +57,27 @@
 
             <!-- Right Column: Large Invoice Preview and Results -->
             <div class="right-column">
-                <div id="resultsSection" class="results-section">
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3>📊 Invoice Results</h3>
+                        <div class="results-actions">
+                            <button class="download-button" onclick="downloadDimonaInvoice()">💾 Download Dimona Invoice ($7.00)</button>
+                            <button class="download-button" onclick="downloadDiscountedInvoice()">💾 Download Discounted Invoice ($6.30)</button>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card" id="summaryContent">
+                        <!-- Summary content will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="orders-table" id="ordersTableContent">
+                        <h4>📋 Order Details</h4>
+                        <!-- Orders table will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Default placeholder when no results -->
+                <div id="defaultPlaceholder" class="results-section">
                     <div style="text-align: center; color: #666; padding: 60px 20px;">
                         <div style="font-size: 3rem; margin-bottom: 20px;">💰</div>
                         <h3 style="margin-bottom: 10px; color: #333;">Large Invoice Preview</h3>
@@ -90,7 +110,7 @@
                 Streamline your print business operations with our integrated tools
             </p>
             <div style="margin-top: 15px; color: #999; font-size: 0.8rem;">
-                MaddInvoice v2.8.18
+                MaddInvoice v2.8.19
             </div>
         </div>
     </footer>

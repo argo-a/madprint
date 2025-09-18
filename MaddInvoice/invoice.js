@@ -145,7 +145,10 @@ function generateInvoice() {
         displayResults(invoiceResults, selectedMonth, selectedYear);
         
         filterStatus.innerHTML = `<div class="success-message">✅ Invoice generated successfully! Found ${invoiceResults.length} orders.</div>`;
+        
+        // Show results section and hide placeholder
         document.getElementById('resultsSection').style.display = 'block';
+        document.getElementById('defaultPlaceholder').style.display = 'none';
         
     } catch (error) {
         filterStatus.innerHTML = `<div class="error-message">Error generating invoice: ${error.message}</div>`;
