@@ -392,9 +392,8 @@ function downloadDimonaInvoice() {
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Invoice');
     
-    // Generate filename with current date
-    const today = new Date();
-    const filename = `MaddInvoice_${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}.xlsx`;
+    // Generate filename with month name
+    const filename = `Paramint_${monthName}_Invoice.xlsx`;
     
     // Download file
     XLSX.writeFile(wb, filename);
