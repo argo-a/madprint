@@ -1,6 +1,7 @@
 let csvData = [];
 let shippedItems = {};
 let selectedCard = null;
+let labelClickCount = {}; // Track clicks per order ID
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,6 +66,7 @@ function handleFileUpload(event) {
             
             // Show control sections
             document.getElementById('statsSection').style.display = 'block';
+            document.getElementById('viewUrlsSection').style.display = 'block';
             document.getElementById('sortSection').style.display = 'block';
             document.getElementById('filterSection').style.display = 'block';
             
@@ -284,10 +286,24 @@ function handleLabelClick(orderId, orderNumber, customerName) {
     const isAlreadyShipped = shippedItems[orderId];
     
     if (isAlreadyShipped) {
-        // Show warning for already shipped item
+        // Always show warning for already shipped items
         showWarningModal(orderId, orderNumber, customerName, true);
+        return;
+    }
+    
+    // Track clicks for unshipped items
+    if (!labelClickCount[orderId]) {
+        labelClickCount[orderId] = 0;
+    }
+    
+    labelClickCount[orderId]++;
+    
+    if (labelClickCount[orderId] === 1) {
+        // First click: go directly to Veeqo
+        const veeqoUrl = `https://app.veeqo.com/orders/${orderId}`;
+        window.open(veeqoUrl, '_blank');
     } else {
-        // Show warning for new shipment
+        // Second click and beyond: show warning modal
         showWarningModal(orderId, orderNumber, customerName, false);
     }
 }
