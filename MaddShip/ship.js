@@ -25,7 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const clearSearch = document.getElementById('clearSearch');
     
-    searchInput.addEventListener('input', handleSearch);
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('keydown', handleSearchKeydown);
     clearSearch.addEventListener('click', clearSearchInput);
     
     // Add grid view controls
@@ -682,7 +683,166 @@ function loadLastSession() {
     }
 }
 
-// Search and Filter Functions
+// Enhanced Search Functions for Barcode Scanning
+function handleSearchInput(event) {
+    const value = event.target.value.trim();
+    const clearButton = document.getElementById('clearSearch');
+    
+    // Show/hide clear button based on input
+    if (value) {
+        clearButton.style.display = 'block';
+    } else {
+        clearButton.style.display = 'none';
+        clearAllHighlights();
+    }
+}
+
+function handleSearchKeydown(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const searchValue = event.target.value.trim();
+        
+        if (searchValue) {
+            performBarcodeSearch(searchValue);
+        }
+    }
+}
+
+function performBarcodeSearch(searchValue) {
+    const searchLower = searchValue.toLowerCase();
+    const cards = document.querySelectorAll('.shipping-card');
+    let foundCard = null;
+    
+    // Clear any existing highlights
+    clearAllHighlights();
+    
+    // Search for exact or partial matches
+    cards.forEach(card => {
+        const orderNumber = card.querySelector('.card-order-number')?.textContent.toLowerCase() || '';
+        const customerName = card.querySelector('.card-customer')?.textContent.toLowerCase() || '';
+        
+        // Check for exact match first, then partial match
+        const exactOrderMatch = orderNumber.includes(`#${searchLower}`) || orderNumber.includes(searchLower);
+        const partialMatch = orderNumber.includes(searchLower) || customerName.includes(searchLower);
+        
+        if (exactOrderMatch || partialMatch) {
+            if (!foundCard) {
+                foundCard = card;
+            }
+        }
+    });
+    
+    if (foundCard) {
+        // Highlight and scroll to the found card
+        highlightFoundCard(foundCard);
+        showSearchResult(true, searchValue);
+        
+        // Auto-clear search field after a short delay for next scan
+        setTimeout(() => {
+            clearSearchInput();
+        }, 2000);
+    } else {
+        // Show not found message
+        showSearchResult(false, searchValue);
+        
+        // Auto-clear search field after showing message
+        setTimeout(() => {
+            clearSearchInput();
+        }, 3000);
+    }
+}
+
+function highlightFoundCard(card) {
+    // Add highlight class
+    card.classList.add('search-highlighted');
+    
+    // Scroll to the card
+    card.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+    });
+    
+    // Select the card
+    selectCard(card);
+    
+    // Remove highlight after a few seconds
+    setTimeout(() => {
+        card.classList.remove('search-highlighted');
+    }, 5000);
+}
+
+function clearAllHighlights() {
+    const highlightedCards = document.querySelectorAll('.search-highlighted');
+    highlightedCards.forEach(card => {
+        card.classList.remove('search-highlighted');
+    });
+    
+    // Remove any search result messages
+    const existingMessage = document.querySelector('.search-result-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+}
+
+function showSearchResult(found, searchValue) {
+    // Remove any existing search result message
+    const existingMessage = document.querySelector('.search-result-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create new search result message
+    const message = document.createElement('div');
+    message.className = 'search-result-message';
+    message.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        font-weight: 600;
+        max-width: 300px;
+    `;
+    
+    if (found) {
+        message.style.background = '#28a745';
+        message.style.color = 'white';
+        message.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2rem;">✅</span>
+                <div>
+                    <div>Found!</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">${searchValue}</div>
+                </div>
+            </div>
+        `;
+    } else {
+        message.style.background = '#dc3545';
+        message.style.color = 'white';
+        message.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2rem;">❌</span>
+                <div>
+                    <div>Not Found</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">${searchValue} not in list</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.body.appendChild(message);
+    
+    // Remove message after delay
+    setTimeout(() => {
+        if (document.body.contains(message)) {
+            document.body.removeChild(message);
+        }
+    }, found ? 2000 : 3000);
+}
+
+// Legacy search function (kept for compatibility)
 function handleSearch(event) {
     searchTerm = event.target.value.toLowerCase().trim();
     const clearButton = document.getElementById('clearSearch');
