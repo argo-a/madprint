@@ -191,45 +191,115 @@ function displayShippingGrid(orders) {
         card.className = `shipping-card ${isShipped ? 'shipped' : ''}`;
         card.dataset.orderId = order.id;
         
-        // Use first image for display
-        const firstImageUrl = googleDriveUrls[0];
-        const fileId = extractFileId(firstImageUrl);
+        // Create image containers for ALL images
+        let imageContainersHtml = '';
+        googleDriveUrls.forEach((imageUrl, index) => {
+            const fileId = extractFileId(imageUrl);
+            const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`;
+            
+            imageContainersHtml += `
+                <div class="image-container" style="position: relative; margin-bottom: 10px;">
+                    <div class="loading-thumbnail" id="loading_${order.id}_${index}" style="width: 100%; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="text-align: center; color: #666;">
+                            <div class="spinner" style="width: 15px; height: 15px; margin: 0 auto 5px;"></div>
+                            Loading ${index + 1}/${googleDriveUrls.length}...
+                        </div>
+                    </div>
+                    <a href="${downloadUrl}" 
+                       class="download-icon" 
+                       download 
+                       title="Download image ${index + 1}"
+                       style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 6px 8px; border-radius: 15px; text-decoration: none; font-size: 12px; z-index: 10;">
+                        💾
+                    </a>
+                </div>
+            `;
+        });
         
         card.innerHTML = `
             <div class="card-image-container">
-                <div class="loading-thumbnail" style="width: 100%; height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
-                    <div style="text-align: center; color: #666;">
-                        <div class="spinner" style="width: 20px; height: 20px; margin: 0 auto 10px;"></div>
-                        Loading preview...
-                    </div>
-                </div>
+                ${imageContainersHtml}
             </div>
             <div class="card-info">
                 <div class="card-order-number">Order #${order.number || order.id}</div>
                 <div class="card-customer">${customerName}</div>
+                <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
                 <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
                     ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
                 </div>
             </div>
-            <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleLabelClick('${order.id}', '${order.number || order.id}', '${customerName.replace(/'/g, "\\'")}')">
-                ${isShipped ? 'SHIPPED' : 'LABEL'}
-            </button>
+            <div class="card-buttons">
+                <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleLabelClick('${order.id}', '${order.number || order.id}', '${customerName.replace(/'/g, "\\'")}')">
+                    ${isShipped ? 'SHIPPED' : 'LABEL'}
+                </button>
+                ${isShipped ? `
+                    <button class="unship-button" onclick="handleUnshipClick('${order.id}', '${order.number || order.id}', '${customerName.replace(/'/g, "\\'")}')">
+                        UNSHIP
+                    </button>
+                ` : ''}
+            </div>
         `;
         
         // Add click handler for card selection
         card.addEventListener('click', (e) => {
-            if (e.target.classList.contains('label-button')) return; // Don't select when clicking button
+            if (e.target.classList.contains('label-button') || e.target.classList.contains('unship-button') || e.target.classList.contains('download-icon')) {
+                return; // Don't select when clicking buttons or download icons
+            }
             selectCard(card);
         });
         
         grid.appendChild(card);
         
-        // Load image preview
-        loadImagePreview(card, fileId, firstImageUrl);
+        // Load all image previews
+        googleDriveUrls.forEach((imageUrl, index) => {
+            const fileId = extractFileId(imageUrl);
+            loadMultipleImagePreviews(card, fileId, imageUrl, index, order.id);
+        });
     });
 }
 
-// Load image preview for a card
+// Load multiple image previews for a card
+async function loadMultipleImagePreviews(card, fileId, imageUrl, index, orderId) {
+    const loadingContainer = document.getElementById(`loading_${orderId}_${index}`);
+    
+    if (!loadingContainer) return;
+    
+    try {
+        // Try to load thumbnail from API first
+        const response = await fetch(`/api/get-thumbnails?fileId=${encodeURIComponent(fileId)}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.thumbnails.length > 0) {
+                loadingContainer.innerHTML = `
+                    <img src="${data.thumbnails[0].url}" 
+                         alt="Order preview ${index + 1}" 
+                         style="width: 100%; height: 150px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd; background: white;"
+                         onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; color: #666; border-radius: 8px; border: 1px solid #ddd;\\'>Preview not available</div>'">
+                `;
+                return;
+            }
+        }
+        
+        // Fallback to Google Drive preview
+        const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+        loadingContainer.innerHTML = `
+            <iframe src="${previewUrl}" 
+                    style="width: 100%; height: 150px; border-radius: 8px; border: 1px solid #ddd;"
+                    frameborder="0">
+            </iframe>
+        `;
+    } catch (error) {
+        console.error('Error loading image preview:', error);
+        loadingContainer.innerHTML = `
+            <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; color: #666; border-radius: 8px; border: 1px solid #ddd;">
+                Preview not available
+            </div>
+        `;
+    }
+}
+
+// Load image preview for a card (legacy function for compatibility)
 async function loadImagePreview(card, fileId, imageUrl) {
     const container = card.querySelector('.card-image-container');
     
@@ -281,67 +351,135 @@ function selectCard(card) {
     card.classList.add('selected');
 }
 
-// Handle label button click
+// Get all orders for a customer
+function getOrdersByCustomer(customerName) {
+    return csvData.filter(order => {
+        const firstName = order.shipping_address_first_name || '';
+        const lastName = order.shipping_address_last_name || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        return fullName === customerName;
+    });
+}
+
+// Handle label button click - immediate shipping with customer grouping
 function handleLabelClick(orderId, orderNumber, customerName) {
-    const isAlreadyShipped = shippedItems[orderId];
+    // Get all orders for this customer
+    const customerOrders = getOrdersByCustomer(customerName);
     
-    if (isAlreadyShipped) {
-        // Always show warning for already shipped items
-        showWarningModal(orderId, orderNumber, customerName, true);
-        return;
-    }
+    // Check if any orders for this customer are already shipped
+    const anyShipped = customerOrders.some(order => shippedItems[order.id]);
     
-    // Track clicks for unshipped items
-    if (!labelClickCount[orderId]) {
-        labelClickCount[orderId] = 0;
-    }
-    
-    labelClickCount[orderId]++;
-    
-    if (labelClickCount[orderId] === 1) {
-        // First click: go directly to Veeqo
+    if (anyShipped) {
+        // Show unship option for the entire customer group
+        showShipUnshipModal(customerOrders, 'unship');
+    } else {
+        // Ship all orders for this customer immediately
+        shipCustomerOrders(customerOrders);
+        
+        // Open Veeqo for the clicked order
         const veeqoUrl = `https://app.veeqo.com/orders/${orderId}`;
         window.open(veeqoUrl, '_blank');
-    } else {
-        // Second click and beyond: show warning modal
-        showWarningModal(orderId, orderNumber, customerName, false);
     }
 }
 
-// Show warning modal
-function showWarningModal(orderId, orderNumber, customerName, alreadyShipped) {
+// Ship all orders for a customer
+function shipCustomerOrders(customerOrders) {
+    customerOrders.forEach(order => {
+        const firstName = order.shipping_address_first_name || '';
+        const lastName = order.shipping_address_last_name || '';
+        const customerName = `${firstName} ${lastName}`.trim();
+        
+        shippedItems[order.id] = {
+            timestamp: new Date().toISOString(),
+            orderNumber: order.number || order.id,
+            customerName: customerName,
+            veeqoUrl: `https://app.veeqo.com/orders/${order.id}`
+        };
+    });
+    
+    // Save to localStorage
+    saveShippedItems();
+    
+    // Update display
+    applySortAndFilter();
+}
+
+// Unship all orders for a customer
+function unshipCustomerOrders(customerOrders) {
+    customerOrders.forEach(order => {
+        delete shippedItems[order.id];
+    });
+    
+    // Save to localStorage
+    saveShippedItems();
+    
+    // Update display
+    applySortAndFilter();
+}
+
+// Handle unship button click
+function handleUnshipClick(orderId, orderNumber, customerName) {
+    const customerOrders = getOrdersByCustomer(customerName);
+    showShipUnshipModal(customerOrders, 'unship');
+}
+
+// Show ship/unship modal for customer groups
+function showShipUnshipModal(customerOrders, action) {
     const modal = document.getElementById('warningModal');
     const warningDetails = document.getElementById('warningDetails');
     const proceedButton = document.getElementById('proceedButton');
     
-    if (alreadyShipped) {
-        const shippedInfo = shippedItems[orderId];
-        const shippedDate = new Date(shippedInfo.timestamp).toLocaleString();
-        
+    const customerName = customerOrders[0] ? 
+        `${customerOrders[0].shipping_address_first_name || ''} ${customerOrders[0].shipping_address_last_name || ''}`.trim() : 
+        'Unknown Customer';
+    
+    if (action === 'unship') {
         warningDetails.innerHTML = `
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                <strong>Order Details:</strong><br>
-                Order: ${orderNumber}<br>
+                <strong>Unship Customer Orders</strong><br>
                 Customer: ${customerName}<br>
-                <strong>Previously shipped:</strong> ${shippedDate}
+                Orders to unship: ${customerOrders.length}<br><br>
+                <div style="max-height: 150px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                    ${customerOrders.map(order => `
+                        <div style="margin-bottom: 5px;">
+                            Order #${order.number || order.id} 
+                            ${shippedItems[order.id] ? '(Currently Shipped)' : '(Pending)'}
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
+        
+        proceedButton.textContent = 'Unship All';
+        proceedButton.style.background = '#dc3545';
+        proceedButton.onclick = () => {
+            unshipCustomerOrders(customerOrders);
+            closeWarningModal();
+        };
     } else {
         warningDetails.innerHTML = `
             <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                <strong>Order Details:</strong><br>
-                Order: ${orderNumber}<br>
-                Customer: ${customerName}
+                <strong>Ship Customer Orders</strong><br>
+                Customer: ${customerName}<br>
+                Orders to ship: ${customerOrders.length}
             </div>
         `;
+        
+        proceedButton.textContent = 'Ship All';
+        proceedButton.style.background = '#28a745';
+        proceedButton.onclick = () => {
+            shipCustomerOrders(customerOrders);
+            closeWarningModal();
+        };
     }
     
-    // Set up proceed button
-    proceedButton.onclick = () => {
-        proceedToLabel(orderId, orderNumber, customerName);
-    };
-    
     modal.style.display = 'flex';
+}
+
+// Show warning modal (legacy function for compatibility)
+function showWarningModal(orderId, orderNumber, customerName, alreadyShipped) {
+    const customerOrders = getOrdersByCustomer(customerName);
+    showShipUnshipModal(customerOrders, alreadyShipped ? 'unship' : 'ship');
 }
 
 // Close warning modal
