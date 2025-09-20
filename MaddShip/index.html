@@ -9,14 +9,35 @@
 </head>
 <body>
     <div class="container">
+        <!-- Top Header with Controls -->
         <div class="header">
-            <h1>🚢 MaddShip</h1>
-            <p>Shipping management with image-based order processing</p>
+            <div class="header-left">
+                <h1>🚢 MaddShip</h1>
+                <div class="header-stats" id="headerStats" style="display: none;">
+                    <span class="stat-badge total" id="headerTotalCount">0</span>
+                    <span class="stat-badge shipped" id="headerShippedCount">0</span>
+                    <span class="stat-badge pending" id="headerPendingCount">0</span>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <!-- Search/Scan Input -->
+                <div class="search-container" id="searchContainer" style="display: none;">
+                    <input type="text" id="searchInput" placeholder="🔍 Search orders or scan barcode..." class="search-input">
+                    <button class="clear-search" id="clearSearch" style="display: none;">✕</button>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    <span id="sidebarToggleIcon">◀</span> Controls
+                </button>
+            </div>
         </div>
         
         <div class="content">
-            <!-- Left Column: Controls and Settings -->
-            <div class="left-column">
+            <!-- Collapsible Sidebar -->
+            <div class="sidebar" id="sidebar">
                 <!-- Upload Section -->
                 <div class="upload-section" id="uploadSection">
                     <h3>📄 Upload Orders CSV</h3>

@@ -2,13 +2,16 @@ let csvData = [];
 let shippedItems = {};
 let selectedCard = null;
 let labelClickCount = {}; // Track clicks per order ID
+let sidebarCollapsed = false;
+let searchTerm = '';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('csvFile').addEventListener('change', handleFileUpload);
     
-    // Load shipped items from localStorage
+    // Load persistent data from localStorage
     loadShippedItems();
+    loadLastSession();
     
     // Add event listeners for sorting and filtering
     document.querySelectorAll('input[name="sortBy"]').forEach(radio => {
@@ -16,6 +19,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('hideShipped').addEventListener('change', applySortAndFilter);
+    
+    // Add search functionality
+    const searchInput = document.getElementById('searchInput');
+    const clearSearch = document.getElementById('clearSearch');
+    
+    searchInput.addEventListener('input', handleSearch);
+    clearSearch.addEventListener('click', clearSearchInput);
+    
+    // Load sidebar state
+    loadSidebarState();
 });
 
 // Load shipped items from localStorage
@@ -160,6 +173,38 @@ function updateStatistics() {
     document.getElementById('pendingCount').textContent = pendingCount;
 }
 
+// Consolidate orders by order number and customer
+function consolidateOrders(orders) {
+    const consolidated = {};
+    
+    orders.forEach(order => {
+        const firstName = order.shipping_address_first_name || '';
+        const lastName = order.shipping_address_last_name || '';
+        const customerName = `${firstName} ${lastName}`.trim() || 'Unknown Customer';
+        const orderNumber = order.number || order.id;
+        
+        // Create unique key combining customer and order number
+        const key = `${customerName}_${orderNumber}`;
+        
+        if (!consolidated[key]) {
+            consolidated[key] = {
+                ...order,
+                customerName: customerName,
+                orderNumber: orderNumber,
+                allOrderIds: [order.id],
+                allGoogleDriveUrls: extractGoogleDriveUrls(order.notes || '')
+            };
+        } else {
+            // Merge additional order IDs and Google Drive URLs
+            consolidated[key].allOrderIds.push(order.id);
+            const additionalUrls = extractGoogleDriveUrls(order.notes || '');
+            consolidated[key].allGoogleDriveUrls = [...consolidated[key].allGoogleDriveUrls, ...additionalUrls];
+        }
+    });
+    
+    return Object.values(consolidated);
+}
+
 // Display shipping grid
 function displayShippingGrid(orders) {
     const grid = document.getElementById('shippingGrid');
@@ -175,23 +220,26 @@ function displayShippingGrid(orders) {
         return;
     }
     
+    // Consolidate orders by order number and customer
+    const consolidatedOrders = consolidateOrders(orders);
+    
     grid.innerHTML = '';
     
-    orders.forEach(order => {
-        const googleDriveUrls = extractGoogleDriveUrls(order.notes || '');
+    consolidatedOrders.forEach(consolidatedOrder => {
+        const googleDriveUrls = consolidatedOrder.allGoogleDriveUrls;
         
         if (googleDriveUrls.length === 0) return; // Skip orders without images
         
-        const isShipped = shippedItems[order.id];
-        const firstName = order.shipping_address_first_name || '';
-        const lastName = order.shipping_address_last_name || '';
-        const customerName = `${firstName} ${lastName}`.trim() || 'Unknown Customer';
+        // Check if any of the order IDs are shipped
+        const isShipped = consolidatedOrder.allOrderIds.some(orderId => shippedItems[orderId]);
+        const customerName = consolidatedOrder.customerName;
         
         const card = document.createElement('div');
         card.className = `shipping-card ${isShipped ? 'shipped' : ''}`;
-        card.dataset.orderId = order.id;
+        card.dataset.orderId = consolidatedOrder.allOrderIds[0]; // Use first order ID as primary
+        card.dataset.allOrderIds = JSON.stringify(consolidatedOrder.allOrderIds);
         
-        // Create image containers for ALL images
+        // Create image containers for ALL images from all consolidated orders
         let imageContainersHtml = '';
         googleDriveUrls.forEach((imageUrl, index) => {
             const fileId = extractFileId(imageUrl);
@@ -199,7 +247,7 @@ function displayShippingGrid(orders) {
             
             imageContainersHtml += `
                 <div class="image-container" style="position: relative; margin-bottom: 10px;">
-                    <div class="loading-thumbnail" id="loading_${order.id}_${index}" style="width: 100%; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
+                    <div class="loading-thumbnail" id="loading_${consolidatedOrder.allOrderIds[0]}_${index}" style="width: 100%; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
                         <div style="text-align: center; color: #666;">
                             <div class="spinner" style="width: 15px; height: 15px; margin: 0 auto 5px;"></div>
                             Loading ${index + 1}/${googleDriveUrls.length}...
@@ -221,19 +269,20 @@ function displayShippingGrid(orders) {
                 ${imageContainersHtml}
             </div>
             <div class="card-info">
-                <div class="card-order-number">Order #${order.number || order.id}</div>
+                <div class="card-order-number">Order #${consolidatedOrder.orderNumber}</div>
                 <div class="card-customer">${customerName}</div>
                 <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
+                ${consolidatedOrder.allOrderIds.length > 1 ? `<div class="card-sub-orders">${consolidatedOrder.allOrderIds.length} sub-orders</div>` : ''}
                 <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
                     ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
                 </div>
             </div>
             <div class="card-buttons">
-                <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleLabelClick('${order.id}', '${order.number || order.id}', '${customerName.replace(/'/g, "\\'")}')">
+                <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleConsolidatedLabelClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
                     ${isShipped ? 'SHIPPED' : 'LABEL'}
                 </button>
                 ${isShipped ? `
-                    <button class="unship-button" onclick="handleUnshipClick('${order.id}', '${order.number || order.id}', '${customerName.replace(/'/g, "\\'")}')">
+                    <button class="unship-button" onclick="handleConsolidatedUnshipClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
                         UNSHIP
                     </button>
                 ` : ''}
@@ -253,7 +302,7 @@ function displayShippingGrid(orders) {
         // Load all image previews
         googleDriveUrls.forEach((imageUrl, index) => {
             const fileId = extractFileId(imageUrl);
-            loadMultipleImagePreviews(card, fileId, imageUrl, index, order.id);
+            loadMultipleImagePreviews(card, fileId, imageUrl, index, consolidatedOrder.allOrderIds[0]);
         });
     });
 }
@@ -417,7 +466,36 @@ function unshipCustomerOrders(customerOrders) {
     applySortAndFilter();
 }
 
-// Handle unship button click
+// Handle consolidated label button click
+function handleConsolidatedLabelClick(allOrderIdsJson, orderNumber, customerName) {
+    const allOrderIds = JSON.parse(allOrderIdsJson);
+    
+    // Check if any orders are already shipped
+    const anyShipped = allOrderIds.some(orderId => shippedItems[orderId]);
+    
+    if (anyShipped) {
+        // Show unship option for all consolidated orders
+        const customerOrders = csvData.filter(order => allOrderIds.includes(order.id));
+        showShipUnshipModal(customerOrders, 'unship');
+    } else {
+        // Ship all consolidated orders immediately
+        const customerOrders = csvData.filter(order => allOrderIds.includes(order.id));
+        shipCustomerOrders(customerOrders);
+        
+        // Open Veeqo for the first order
+        const veeqoUrl = `https://app.veeqo.com/orders/${allOrderIds[0]}`;
+        window.open(veeqoUrl, '_blank');
+    }
+}
+
+// Handle consolidated unship button click
+function handleConsolidatedUnshipClick(allOrderIdsJson, orderNumber, customerName) {
+    const allOrderIds = JSON.parse(allOrderIdsJson);
+    const customerOrders = csvData.filter(order => allOrderIds.includes(order.id));
+    showShipUnshipModal(customerOrders, 'unship');
+}
+
+// Handle unship button click (legacy)
 function handleUnshipClick(orderId, orderNumber, customerName) {
     const customerOrders = getOrdersByCustomer(customerName);
     showShipUnshipModal(customerOrders, 'unship');
@@ -555,6 +633,238 @@ document.addEventListener('keydown', function(e) {
     
     e.preventDefault();
 });
+
+// Persistent Data Storage Functions
+function saveLastSession() {
+    const sessionData = {
+        csvData: csvData,
+        timestamp: new Date().toISOString(),
+        fileName: document.getElementById('csvFile').files[0]?.name || 'Unknown File'
+    };
+    localStorage.setItem('maddShipLastSession', JSON.stringify(sessionData));
+}
+
+function loadLastSession() {
+    const stored = localStorage.getItem('maddShipLastSession');
+    if (stored) {
+        try {
+            const sessionData = JSON.parse(stored);
+            if (sessionData.csvData && sessionData.csvData.length > 0) {
+                csvData = sessionData.csvData;
+                
+                // Show success message
+                const uploadStatus = document.getElementById('uploadStatus');
+                uploadStatus.innerHTML = `<div class="success-message">✅ Restored session: ${sessionData.fileName} (${csvData.length} orders)</div>`;
+                
+                // Show control sections
+                document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('viewUrlsSection').style.display = 'block';
+                document.getElementById('sortSection').style.display = 'block';
+                document.getElementById('filterSection').style.display = 'block';
+                document.getElementById('searchContainer').style.display = 'block';
+                document.getElementById('headerStats').style.display = 'flex';
+                
+                // Update display
+                updateStatistics();
+                updateHeaderStats();
+                applySortAndFilter();
+            }
+        } catch (error) {
+            console.error('Error loading last session:', error);
+        }
+    }
+}
+
+// Search and Filter Functions
+function handleSearch(event) {
+    searchTerm = event.target.value.toLowerCase().trim();
+    const clearButton = document.getElementById('clearSearch');
+    
+    if (searchTerm) {
+        clearButton.style.display = 'block';
+        filterBySearch();
+    } else {
+        clearButton.style.display = 'none';
+        clearSearchFilter();
+    }
+}
+
+function clearSearchInput() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('clearSearch').style.display = 'none';
+    searchTerm = '';
+    clearSearchFilter();
+}
+
+function filterBySearch() {
+    const cards = document.querySelectorAll('.shipping-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const orderNumber = card.querySelector('.card-order-number')?.textContent.toLowerCase() || '';
+        const customerName = card.querySelector('.card-customer')?.textContent.toLowerCase() || '';
+        
+        const matches = orderNumber.includes(searchTerm) || customerName.includes(searchTerm);
+        
+        if (matches) {
+            card.classList.remove('filtered');
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.classList.add('filtered');
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show message if no results
+    const grid = document.getElementById('shippingGrid');
+    const existingMessage = grid.querySelector('.search-no-results');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    if (visibleCount === 0 && searchTerm) {
+        const noResultsMessage = document.createElement('div');
+        noResultsMessage.className = 'search-no-results placeholder-message';
+        noResultsMessage.innerHTML = `
+            <div style="font-size: 2rem; margin-bottom: 15px;">🔍</div>
+            <h3 style="margin-bottom: 10px; color: #333;">No Results Found</h3>
+            <p>No orders match "${searchTerm}". Try a different search term.</p>
+        `;
+        grid.appendChild(noResultsMessage);
+    }
+}
+
+function clearSearchFilter() {
+    const cards = document.querySelectorAll('.shipping-card');
+    cards.forEach(card => {
+        card.classList.remove('filtered');
+        card.style.display = 'block';
+    });
+    
+    // Remove no results message
+    const noResultsMessage = document.querySelector('.search-no-results');
+    if (noResultsMessage) {
+        noResultsMessage.remove();
+    }
+}
+
+// Sidebar Toggle Functions
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const rightColumn = document.querySelector('.right-column');
+    const grid = document.getElementById('shippingGrid');
+    const toggleIcon = document.getElementById('sidebarToggleIcon');
+    
+    sidebarCollapsed = !sidebarCollapsed;
+    
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        rightColumn.classList.add('full-width');
+        grid.classList.add('sidebar-collapsed');
+        toggleIcon.textContent = '▶';
+    } else {
+        sidebar.classList.remove('collapsed');
+        rightColumn.classList.remove('full-width');
+        grid.classList.remove('sidebar-collapsed');
+        toggleIcon.textContent = '◀';
+    }
+    
+    // Save sidebar state
+    saveSidebarState();
+    
+    // Trigger grid recalculation
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 300);
+}
+
+function saveSidebarState() {
+    localStorage.setItem('maddShipSidebarCollapsed', JSON.stringify(sidebarCollapsed));
+}
+
+function loadSidebarState() {
+    const stored = localStorage.getItem('maddShipSidebarCollapsed');
+    if (stored) {
+        const wasCollapsed = JSON.parse(stored);
+        if (wasCollapsed && !sidebarCollapsed) {
+            toggleSidebar();
+        }
+    }
+}
+
+// Enhanced Statistics Functions
+function updateHeaderStats() {
+    const totalCount = csvData.length;
+    const shippedCount = Object.keys(shippedItems).length;
+    const pendingCount = totalCount - shippedCount;
+    
+    document.getElementById('headerTotalCount').textContent = `${totalCount} Total`;
+    document.getElementById('headerShippedCount').textContent = `${shippedCount} Shipped`;
+    document.getElementById('headerPendingCount').textContent = `${pendingCount} Pending`;
+}
+
+// Override the original updateStatistics to also update header
+const originalUpdateStatistics = updateStatistics;
+updateStatistics = function() {
+    originalUpdateStatistics();
+    updateHeaderStats();
+};
+
+// Override handleFileUpload to save session and show search
+const originalHandleFileUpload = handleFileUpload;
+handleFileUpload = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const uploadStatus = document.getElementById('uploadStatus');
+    uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing CSV file...</div>';
+
+    Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        delimitersToGuess: [',', '\t', '|', ';'],
+        complete: function(results) {
+            if (results.errors.length > 0) {
+                uploadStatus.innerHTML = `<div class="error-message">Error parsing CSV: ${results.errors[0].message}</div>`;
+                return;
+            }
+
+            // Clean headers by removing whitespace
+            const cleanData = results.data.map(row => {
+                const cleanRow = {};
+                Object.keys(row).forEach(key => {
+                    const cleanKey = key.trim();
+                    cleanRow[cleanKey] = row[key];
+                });
+                return cleanRow;
+            });
+
+            csvData = cleanData;
+            
+            uploadStatus.innerHTML = `<div class="success-message">✅ Successfully loaded ${csvData.length} orders!</div>`;
+            
+            // Show control sections
+            document.getElementById('statsSection').style.display = 'block';
+            document.getElementById('viewUrlsSection').style.display = 'block';
+            document.getElementById('sortSection').style.display = 'block';
+            document.getElementById('filterSection').style.display = 'block';
+            document.getElementById('searchContainer').style.display = 'block';
+            document.getElementById('headerStats').style.display = 'flex';
+            
+            // Save session data
+            saveLastSession();
+            
+            // Update statistics and display grid
+            updateStatistics();
+            applySortAndFilter();
+        },
+        error: function(error) {
+            uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
+        }
+    });
+};
 
 // Close modal when clicking outside
 document.getElementById('warningModal').addEventListener('click', function(e) {
