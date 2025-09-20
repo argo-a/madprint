@@ -203,10 +203,13 @@ function consolidateOrders(orders) {
                 allGoogleDriveUrls: extractGoogleDriveUrls(order.notes || '')
             };
         } else {
-            // Merge additional order IDs and Google Drive URLs
+            // Merge additional order IDs and Google Drive URLs with deduplication
             consolidated[key].allOrderIds.push(order.id);
             const additionalUrls = extractGoogleDriveUrls(order.notes || '');
-            consolidated[key].allGoogleDriveUrls = [...consolidated[key].allGoogleDriveUrls, ...additionalUrls];
+            
+            // Deduplicate URLs by creating a Set and converting back to array
+            const allUrls = [...consolidated[key].allGoogleDriveUrls, ...additionalUrls];
+            consolidated[key].allGoogleDriveUrls = [...new Set(allUrls)];
         }
     });
     
