@@ -276,7 +276,7 @@ function displayShippingGrid(orders) {
         });
         
         card.innerHTML = `
-            <div class="card-image-container">
+            <div class="card-image-container ${googleDriveUrls.length === 1 ? 'single-image' : 'multiple-images'}">
                 ${imageContainersHtml}
             </div>
             <div class="card-info">
