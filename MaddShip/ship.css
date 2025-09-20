@@ -117,6 +117,38 @@ body {
 .header-right {
     display: flex;
     align-items: center;
+    gap: 15px;
+}
+
+/* Grid Controls */
+.grid-controls {
+    display: flex;
+    gap: 5px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px;
+    border-radius: 20px;
+}
+
+.grid-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    padding: 8px 12px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    min-width: 40px;
+}
+
+.grid-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.grid-btn.active {
+    background: rgba(255,255,255,0.3);
+    color: white;
 }
 
 .sidebar-toggle {
@@ -340,17 +372,48 @@ body {
     color: #333;
 }
 
-/* Shipping Grid - Enhanced for Full Width */
+/* Shipping Grid - Multiple View Modes */
 .shipping-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 25px;
     padding: 25px;
+    transition: all 0.3s ease;
 }
 
-.shipping-grid.sidebar-collapsed {
+/* Default Medium Grid */
+.shipping-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+/* Small Grid - More cards per row */
+.shipping-grid.grid-small {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
+}
+
+/* Large Grid - Fewer cards per row, larger cards */
+.shipping-grid.grid-large {
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 30px;
+}
+
+/* List View - Horizontal layout */
+.shipping-grid.grid-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+/* Sidebar collapsed adjustments */
+.shipping-grid.sidebar-collapsed {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.shipping-grid.sidebar-collapsed.grid-small {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.shipping-grid.sidebar-collapsed.grid-large {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
 }
 
 .placeholder-message {
@@ -360,7 +423,7 @@ body {
     padding: 60px 20px;
 }
 
-/* Shipping Card - Enhanced */
+/* Shipping Card - Enhanced with Grid Modes */
 .shipping-card {
     background: white;
     border-radius: 12px;
@@ -369,7 +432,27 @@ body {
     transition: all 0.3s ease;
     cursor: pointer;
     border: 2px solid transparent;
-    min-height: 400px;
+    min-height: 450px;
+}
+
+/* Small grid cards */
+.grid-small .shipping-card {
+    padding: 15px;
+    min-height: 380px;
+}
+
+/* Large grid cards */
+.grid-large .shipping-card {
+    padding: 22px;
+    min-height: 550px;
+}
+
+/* List view cards */
+.grid-list .shipping-card {
+    display: flex;
+    flex-direction: row;
+    min-height: 200px;
+    max-height: 250px;
 }
 
 .shipping-card:hover {
@@ -392,19 +475,39 @@ body {
     transform: scale(0.95);
 }
 
-/* Card Image Container - Enhanced */
+/* Card Image Container - Enhanced with Larger Images */
 .card-image-container {
     margin-bottom: 18px;
-    max-height: 500px;
+    max-height: 600px;
     overflow-y: auto;
     border-radius: 10px;
     background: #f8f9fa;
-    padding: 8px;
+    padding: 4px;
+}
+
+/* Small grid image container */
+.grid-small .card-image-container {
+    max-height: 400px;
+    padding: 3px;
+}
+
+/* Large grid image container */
+.grid-large .card-image-container {
+    max-height: 700px;
+    padding: 6px;
+}
+
+/* List view image container */
+.grid-list .card-image-container {
+    flex: 0 0 300px;
+    margin-right: 20px;
+    margin-bottom: 0;
+    max-height: 200px;
 }
 
 .image-container {
     position: relative;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     border-radius: 8px;
     overflow: hidden;
 }
@@ -413,9 +516,10 @@ body {
     margin-bottom: 0;
 }
 
+/* Enhanced Image Sizes */
 .card-image {
     width: 100%;
-    height: 220px;
+    height: 300px;
     object-fit: contain;
     border-radius: 8px;
     background: white;
@@ -423,30 +527,71 @@ body {
     transition: all 0.3s ease;
 }
 
+/* Small grid images */
+.grid-small .card-image {
+    height: 220px;
+}
+
+/* Large grid images */
+.grid-large .card-image {
+    height: 380px;
+}
+
+/* List view images */
+.grid-list .card-image {
+    height: 180px;
+}
+
 .card-image:hover {
     transform: scale(1.02);
 }
 
-/* Download Icon */
+/* Enhanced Download Icon */
 .download-icon {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0,0,0,0.7);
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 10px;
+    border-radius: 18px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.download-icon:hover {
+    background: rgba(0,0,0,0.95);
+    transform: scale(1.15);
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Download All Button for Multi-Image Orders */
+.download-all-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(102, 126, 234, 0.9);
     color: white;
     padding: 6px 8px;
     border-radius: 15px;
     text-decoration: none;
     font-size: 12px;
+    font-weight: 600;
     z-index: 10;
     transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
 }
 
-.download-icon:hover {
-    background: rgba(0,0,0,0.9);
+.download-all-btn:hover {
+    background: rgba(102, 126, 234, 1);
     transform: scale(1.1);
-    color: white;
-    text-decoration: none;
 }
 
 .card-info {

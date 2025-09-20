@@ -4,6 +4,7 @@ let selectedCard = null;
 let labelClickCount = {}; // Track clicks per order ID
 let sidebarCollapsed = false;
 let searchTerm = '';
+let currentGridMode = 'medium';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -27,8 +28,14 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('input', handleSearch);
     clearSearch.addEventListener('click', clearSearchInput);
     
-    // Load sidebar state
+    // Add grid view controls
+    document.querySelectorAll('.grid-btn').forEach(btn => {
+        btn.addEventListener('click', handleGridModeChange);
+    });
+    
+    // Load sidebar and grid state
     loadSidebarState();
+    loadGridMode();
 });
 
 // Load shipped items from localStorage
@@ -864,6 +871,237 @@ handleFileUpload = function(event) {
             uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
         }
     });
+};
+
+// Grid Mode Functions
+function handleGridModeChange(event) {
+    const newMode = event.target.dataset.grid;
+    if (newMode === currentGridMode) return;
+    
+    // Update active button
+    document.querySelectorAll('.grid-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update grid mode
+    currentGridMode = newMode;
+    applyGridMode();
+    saveGridMode();
+}
+
+function applyGridMode() {
+    const grid = document.getElementById('shippingGrid');
+    
+    // Remove all grid mode classes
+    grid.classList.remove('grid-small', 'grid-medium', 'grid-large', 'grid-list');
+    
+    // Apply new grid mode class
+    if (currentGridMode !== 'medium') {
+        grid.classList.add(`grid-${currentGridMode}`);
+    }
+    
+    // Show/hide grid controls when data is loaded
+    if (csvData.length > 0) {
+        document.getElementById('gridControls').style.display = 'flex';
+    }
+}
+
+function saveGridMode() {
+    localStorage.setItem('maddShipGridMode', currentGridMode);
+}
+
+function loadGridMode() {
+    const stored = localStorage.getItem('maddShipGridMode');
+    if (stored && stored !== currentGridMode) {
+        currentGridMode = stored;
+        
+        // Update active button
+        document.querySelectorAll('.grid-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.grid === currentGridMode) {
+                btn.classList.add('active');
+            }
+        });
+        
+        applyGridMode();
+    }
+}
+
+// Download All Images Function
+function downloadAllImages(allOrderIds, customerName) {
+    const orders = csvData.filter(order => allOrderIds.includes(order.id));
+    const allUrls = [];
+    
+    orders.forEach(order => {
+        const urls = extractGoogleDriveUrls(order.notes || '');
+        urls.forEach(url => {
+            const fileId = extractFileId(url);
+            if (fileId) {
+                allUrls.push({
+                    url: `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`,
+                    filename: `${customerName}_${order.number || order.id}_${fileId}.jpg`
+                });
+            }
+        });
+    });
+    
+    // Download each file with a small delay to avoid overwhelming the browser
+    allUrls.forEach((file, index) => {
+        setTimeout(() => {
+            const link = document.createElement('a');
+            link.href = file.url;
+            link.download = file.filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }, index * 500); // 500ms delay between downloads
+    });
+    
+    // Show notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 1001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    notification.textContent = `Downloading ${allUrls.length} images for ${customerName}...`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 3000);
+}
+
+// Enhanced Display Function with Download All Button
+function updateDisplayShippingGrid() {
+    // Show grid controls when data is loaded
+    if (csvData.length > 0) {
+        document.getElementById('gridControls').style.display = 'flex';
+        applyGridMode();
+    }
+}
+
+// Override the original displayShippingGrid to add download all functionality
+const originalDisplayShippingGrid = displayShippingGrid;
+displayShippingGrid = function(orders) {
+    const grid = document.getElementById('shippingGrid');
+    
+    if (orders.length === 0) {
+        grid.innerHTML = `
+            <div class="placeholder-message">
+                <div style="font-size: 3rem; margin-bottom: 20px;">📦</div>
+                <h3 style="margin-bottom: 10px; color: #333;">No Orders to Display</h3>
+                <p>All orders are filtered out or no data available.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Consolidate orders by order number and customer
+    const consolidatedOrders = consolidateOrders(orders);
+    
+    grid.innerHTML = '';
+    
+    consolidatedOrders.forEach(consolidatedOrder => {
+        const googleDriveUrls = consolidatedOrder.allGoogleDriveUrls;
+        
+        if (googleDriveUrls.length === 0) return; // Skip orders without images
+        
+        // Check if any of the order IDs are shipped
+        const isShipped = consolidatedOrder.allOrderIds.some(orderId => shippedItems[orderId]);
+        const customerName = consolidatedOrder.customerName;
+        
+        const card = document.createElement('div');
+        card.className = `shipping-card ${isShipped ? 'shipped' : ''}`;
+        card.dataset.orderId = consolidatedOrder.allOrderIds[0]; // Use first order ID as primary
+        card.dataset.allOrderIds = JSON.stringify(consolidatedOrder.allOrderIds);
+        
+        // Create image containers for ALL images from all consolidated orders
+        let imageContainersHtml = '';
+        googleDriveUrls.forEach((imageUrl, index) => {
+            const fileId = extractFileId(imageUrl);
+            const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`;
+            
+            imageContainersHtml += `
+                <div class="image-container" style="position: relative; margin-bottom: 8px;">
+                    <div class="loading-thumbnail" id="loading_${consolidatedOrder.allOrderIds[0]}_${index}" style="width: 100%; height: 300px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
+                        <div style="text-align: center; color: #666;">
+                            <div class="spinner" style="width: 15px; height: 15px; margin: 0 auto 5px;"></div>
+                            Loading ${index + 1}/${googleDriveUrls.length}...
+                        </div>
+                    </div>
+                    <a href="${downloadUrl}" 
+                       class="download-icon" 
+                       download 
+                       title="Download image ${index + 1}">
+                        💾
+                    </a>
+                    ${index === 0 && googleDriveUrls.length > 1 ? `
+                        <button class="download-all-btn" 
+                                onclick="downloadAllImages(${JSON.stringify(consolidatedOrder.allOrderIds)}, '${customerName.replace(/'/g, "\\'")}');"
+                                title="Download all ${googleDriveUrls.length} images">
+                            📥 All
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        });
+        
+        card.innerHTML = `
+            <div class="card-image-container">
+                ${imageContainersHtml}
+            </div>
+            <div class="card-info">
+                <div class="card-order-number">Order #${consolidatedOrder.orderNumber}</div>
+                <div class="card-customer">${customerName}</div>
+                <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
+                ${consolidatedOrder.allOrderIds.length > 1 ? `<div class="card-sub-orders">${consolidatedOrder.allOrderIds.length} sub-orders</div>` : ''}
+                <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
+                    ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
+                </div>
+            </div>
+            <div class="card-buttons">
+                <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleConsolidatedLabelClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
+                    ${isShipped ? 'SHIPPED' : 'LABEL'}
+                </button>
+                ${isShipped ? `
+                    <button class="unship-button" onclick="handleConsolidatedUnshipClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
+                        UNSHIP
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        
+        // Add click handler for card selection
+        card.addEventListener('click', (e) => {
+            if (e.target.classList.contains('label-button') || 
+                e.target.classList.contains('unship-button') || 
+                e.target.classList.contains('download-icon') ||
+                e.target.classList.contains('download-all-btn')) {
+                return; // Don't select when clicking buttons or download icons
+            }
+            selectCard(card);
+        });
+        
+        grid.appendChild(card);
+        
+        // Load all image previews
+        googleDriveUrls.forEach((imageUrl, index) => {
+            const fileId = extractFileId(imageUrl);
+            loadMultipleImagePreviews(card, fileId, imageUrl, index, consolidatedOrder.allOrderIds[0]);
+        });
+    });
+    
+    // Apply current grid mode and show controls
+    updateDisplayShippingGrid();
 };
 
 // Close modal when clicking outside
