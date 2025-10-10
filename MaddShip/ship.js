@@ -456,6 +456,38 @@ function updateCardShipStatus(orderId, isShipped) {
                 statusElement.textContent = isShipped ? '✅ SHIPPED' : '📦 PENDING';
             }
             
+            // Update/add/remove shipped date
+            const cardDetails = card.querySelector('.card-details');
+            const existingDateElement = cardDetails.querySelector('.card-shipped-date');
+            
+            if (isShipped) {
+                // Get or create shipped date element
+                const shippedInfo = shippedItems[allOrderIds.find(id => shippedItems[id])];
+                if (shippedInfo && shippedInfo.timestamp) {
+                    const shippedDate = new Date(shippedInfo.timestamp);
+                    const month = String(shippedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(shippedDate.getDate()).padStart(2, '0');
+                    const dateHtml = `📅 ${month}/${day}`;
+                    
+                    if (existingDateElement) {
+                        existingDateElement.textContent = dateHtml;
+                    } else {
+                        // Insert before status element
+                        const dateDiv = document.createElement('div');
+                        dateDiv.className = 'card-shipped-date';
+                        dateDiv.textContent = dateHtml;
+                        if (statusElement) {
+                            statusElement.parentNode.insertBefore(dateDiv, statusElement);
+                        } else {
+                            cardDetails.appendChild(dateDiv);
+                        }
+                    }
+                }
+            } else if (existingDateElement) {
+                // Remove date when unshipping
+                existingDateElement.remove();
+            }
+            
             // Update button
             const labelButton = card.querySelector('.label-button');
             if (labelButton) {
