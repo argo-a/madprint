@@ -105,8 +105,12 @@ function handleFileUpload(event) {
 function extractGoogleDriveUrls(notes) {
     if (!notes) return [];
     
-    const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g;
-    const matches = notes.match(driveUrlRegex);
+    // First clean the notes text to remove [@...] patterns
+    const cleanedNotes = notes.replace(/\[@[^\]]+\]\s*/g, '');
+    
+    // Updated regex to accept both drive_link and sharing formats
+    const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=(drive_link|sharing)/g;
+    const matches = cleanedNotes.match(driveUrlRegex);
     
     return matches || [];
 }
@@ -239,8 +243,6 @@ function displayShippingGrid(orders) {
     consolidatedOrders.forEach(consolidatedOrder => {
         const googleDriveUrls = consolidatedOrder.allGoogleDriveUrls;
         
-        if (googleDriveUrls.length === 0) return; // Skip orders without images
-        
         // Check if any of the order IDs are shipped
         const isShipped = consolidatedOrder.allOrderIds.some(orderId => shippedItems[orderId]);
         const customerName = consolidatedOrder.customerName;
@@ -252,28 +254,44 @@ function displayShippingGrid(orders) {
         
         // Create image containers for ALL images from all consolidated orders
         let imageContainersHtml = '';
-        googleDriveUrls.forEach((imageUrl, index) => {
-            const fileId = extractFileId(imageUrl);
-            const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`;
-            
-            imageContainersHtml += `
+        
+        if (googleDriveUrls.length === 0) {
+            // Show placeholder for orders without valid URLs
+            imageContainersHtml = `
                 <div class="image-container" style="position: relative; margin-bottom: 10px;">
-                    <div class="loading-thumbnail" id="loading_${consolidatedOrder.allOrderIds[0]}_${index}" style="width: 100%; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
-                        <div style="text-align: center; color: #666;">
-                            <div class="spinner" style="width: 15px; height: 15px; margin: 0 auto 5px;"></div>
-                            Loading ${index + 1}/${googleDriveUrls.length}...
+                    <div style="width: 100%; height: 150px; background: #fff3cd; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 2px dashed #ffc107; color: #856404;">
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                            <div style="font-weight: bold; margin-bottom: 5px;">No Images / Bad URL</div>
+                            <div style="font-size: 0.8rem;">Check order notes for URL issues</div>
                         </div>
                     </div>
-                    <a href="${downloadUrl}" 
-                       class="download-icon" 
-                       download 
-                       title="Download image ${index + 1}"
-                       style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 6px 8px; border-radius: 15px; text-decoration: none; font-size: 12px; z-index: 10;">
-                        💾
-                    </a>
                 </div>
             `;
-        });
+        } else {
+            googleDriveUrls.forEach((imageUrl, index) => {
+            const fileId = extractFileId(imageUrl);
+                const downloadUrl = `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`;
+                
+                imageContainersHtml += `
+                    <div class="image-container" style="position: relative; margin-bottom: 10px;">
+                        <div class="loading-thumbnail" id="loading_${consolidatedOrder.allOrderIds[0]}_${index}" style="width: 100%; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="text-align: center; color: #666;">
+                                <div class="spinner" style="width: 15px; height: 15px; margin: 0 auto 5px;"></div>
+                                Loading ${index + 1}/${googleDriveUrls.length}...
+                            </div>
+                        </div>
+                        <a href="${downloadUrl}" 
+                           class="download-icon" 
+                           download 
+                           title="Download image ${index + 1}"
+                           style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 6px 8px; border-radius: 15px; text-decoration: none; font-size: 12px; z-index: 10;">
+                            💾
+                        </a>
+                    </div>
+                `;
+            });
+        }
         
         card.innerHTML = `
             <div class="card-image-container ${googleDriveUrls.length === 1 ? 'single-image' : 'multiple-images'}">
