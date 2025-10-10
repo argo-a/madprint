@@ -181,7 +181,7 @@ function updateStatistics() {
     document.getElementById('pendingCount').textContent = pendingCount;
 }
 
-// Consolidate orders by order number and customer
+// Consolidate orders by unique order ID only (not by customer name)
 function consolidateOrders(orders) {
     const consolidated = {};
     
@@ -191,8 +191,8 @@ function consolidateOrders(orders) {
         const customerName = `${firstName} ${lastName}`.trim() || 'Unknown Customer';
         const orderNumber = order.number || order.id;
         
-        // Create unique key combining customer and order number
-        const key = `${customerName}_${orderNumber}`;
+        // Use order ID as the unique key - each order ID is a separate card
+        const key = order.id;
         
         if (!consolidated[key]) {
             consolidated[key] = {
@@ -203,8 +203,8 @@ function consolidateOrders(orders) {
                 allGoogleDriveUrls: extractGoogleDriveUrls(order.notes || '')
             };
         } else {
-            // Merge additional order IDs and Google Drive URLs with deduplication
-            consolidated[key].allOrderIds.push(order.id);
+            // This should rarely happen (duplicate order IDs in CSV)
+            // But if it does, merge the URLs
             const additionalUrls = extractGoogleDriveUrls(order.notes || '');
             
             // Deduplicate URLs by creating a Set and converting back to array
