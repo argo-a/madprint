@@ -3,1085 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MaddPrints - Order Tracker</title>
+    <title>MaddShip - Shipping Management</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            min-height: 90vh;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 5px;
-            font-weight: 300;
-        }
-
-        .header p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .content {
-            display: grid;
-            grid-template-columns: 420px 1fr;
-            min-height: calc(90vh - 120px);
-        }
-
-        .left-column {
-            background: #f8f9fa;
-            padding: 30px;
-            border-right: 1px solid #dee2e6;
-            overflow-y: auto;
-        }
-
-        .right-column {
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        /* Compact Upload Section */
-        .upload-toggle {
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-
-        .upload-header {
-            padding: 12px 15px;
-            background: #e9ecef;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.3s ease;
-        }
-
-        .upload-header:hover {
-            background: #dee2e6;
-        }
-
-        .upload-header h3 {
-            font-size: 0.9rem;
-            color: #495057;
-            margin: 0;
-        }
-
-        .upload-arrow {
-            transition: transform 0.3s ease;
-            color: #6c757d;
-        }
-
-        .upload-arrow.expanded {
-            transform: rotate(180deg);
-        }
-
-        .upload-content {
-            padding: 0 15px;
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .upload-content.expanded {
-            padding: 15px;
-            max-height: 400px;
-        }
-
-        .upload-section {
-            text-align: center;
-            padding: 15px;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .upload-section:hover {
-            border-color: #667eea;
-            background: #f0f0ff;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .upload-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .upload-button:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Main Search Section - Compact for Left Column */
-        .search-section {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            color: white;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .search-section h2 {
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-            font-weight: 400;
-        }
-
-        .search-section p {
-            margin-bottom: 15px;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .search-box {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: stretch;
-        }
-
-        .search-input {
-            padding: 12px 15px;
-            border: none;
-            border-radius: 20px;
-            font-size: 1rem;
-            outline: none;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .search-input:focus {
-            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
-        }
-
-        .search-button {
-            background: white;
-            color: #28a745;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .search-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .barcode-info {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.9rem;
-            display: none;
-            backdrop-filter: blur(10px);
-        }
-
-        .barcode-info.show {
-            display: block;
-        }
-
-        /* Stats Section - Compact */
-        .stats-section {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-            border: 1px solid #dee2e6;
-            border-left: 4px solid #2196f3;
-        }
-
-        .stats-section h3 {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: #1976d2;
-        }
-
-        .stats-content {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #1976d2;
-        }
-
-        .stat-label {
-            font-size: 0.7rem;
-            color: #666;
-        }
-
-        /* View URLs Section */
-        .view-urls-section {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-            border: 1px solid #dee2e6;
-            border-left: 4px solid #667eea;
-        }
-
-        .view-urls-section h3 {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        .view-urls-section p {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .results-section {
-            margin-top: 0;
-        }
-
-        .order-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
-        }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .tracking-number {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .order-number {
-            font-size: 1rem;
-            color: #666;
-        }
-
-        .customer-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #28a745;
-            margin-top: 8px;
-        }
-
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
-        }
-
-        .image-item {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .image-link {
-            display: inline-block;
-            background: #4285f4;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .image-link:hover {
-            background: #3367d6;
-        }
-
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #28a745;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #dc3545;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-size: 1.1rem;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .view-urls-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin: 5px;
-            transition: transform 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .view-urls-button:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Mobile Responsiveness */
-        @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
-                min-height: auto;
-            }
-
-            .left-column {
-                border-right: none;
-                border-bottom: 1px solid #dee2e6;
-            }
-
-            .search-box {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .search-input, .search-button {
-                width: 100%;
-            }
-
-            .stats-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .search-section h2 {
-                font-size: 1.2rem;
-            }
-
-            .images-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="ship.css">
 </head>
 <body>
+    <!-- Top Navigation Bar -->
+    <nav style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 12px 30px; display: flex; justify-content: center; gap: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <a href="/" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.4);">
+            🚢 MaddShip
+        </a>
+        <a href="/quick-check.html" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.1); transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.2);">
+            ⚡ Quick Check
+        </a>
+        <a href="/view-urls.html" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.1); transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.2);">
+            📋 View URLs
+        </a>
+        <a href="/MaddInvoice/" style="color: white; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.1); transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.2);">
+            📄 Invoice Generator
+        </a>
+    </nav>
+    
     <div class="container">
+        <!-- Top Header with Controls -->
         <div class="header">
-            <h1>📦 MaddPrints Order Tracker</h1>
-            <p>Scan tracking numbers to instantly find order images</p>
+            <div class="header-left">
+                <h1>🚢 MaddShip</h1>
+                <div class="header-stats" id="headerStats" style="display: none;">
+                    <span class="stat-badge total" id="headerTotalCount">0</span>
+                    <span class="stat-badge shipped" id="headerShippedCount">0</span>
+                    <span class="stat-badge pending" id="headerPendingCount">0</span>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <!-- Search/Scan Input -->
+                <div class="search-container" id="searchContainer" style="display: none;">
+                    <input type="text" id="searchInput" placeholder="🔍 Search orders or scan barcode..." class="search-input">
+                    <button class="clear-search" id="clearSearch" style="display: none;">✕</button>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <!-- Grid View Controls -->
+                <div class="grid-controls" id="gridControls" style="display: none;">
+                    <button class="grid-btn active" data-grid="medium" title="Medium Grid">⊞</button>
+                    <button class="grid-btn" data-grid="small" title="Small Grid">⊟</button>
+                    <button class="grid-btn" data-grid="large" title="Large Grid">⊠</button>
+                    <button class="grid-btn" data-grid="list" title="List View">≡</button>
+                </div>
+                
+                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    <span id="sidebarToggleIcon">◀</span> Controls
+                </button>
+            </div>
         </div>
         
         <div class="content">
-            <!-- Left Column: Controls and Package Info -->
-            <div class="left-column">
-                <!-- Compact Upload Section -->
-                <div class="upload-toggle">
-                    <div class="upload-header" onclick="toggleUpload()">
-                        <h3>📄 Upload CSV File</h3>
-                        <span class="upload-arrow" id="uploadArrow">▼</span>
-                    </div>
-                    <div class="upload-content" id="uploadContent">
-                        <div class="upload-section">
-                            <p>Select your orders CSV file to get started</p>
-                            <input type="file" id="csvFile" class="file-input" accept=".csv">
-                            <button class="upload-button" onclick="document.getElementById('csvFile').click()">
-                                Choose CSV File
-                            </button>
-                        </div>
-                        <div id="uploadStatus"></div>
-                    </div>
+            <!-- Collapsible Sidebar -->
+            <div class="sidebar" id="sidebar">
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <h3>📄 Upload Orders CSV</h3>
+                    <p>Select your CSV file containing order data with Google Drive URLs</p>
+                    <br>
+                    <input type="file" id="csvFile" class="file-input" accept=".csv">
+                    <button class="upload-button" onclick="document.getElementById('csvFile').click()">
+                        Choose CSV File
+                    </button>
+                    <div id="uploadStatus"></div>
                 </div>
 
-                <!-- Stats Section - Compact -->
-                <div class="stats-section" id="statsSection">
-                    <h3>📊 CSV Statistics</h3>
-                    <div class="stats-content" id="statsContent"></div>
+                <!-- Statistics Section -->
+                <div class="stats-section" id="statsSection" style="display: none;">
+                    <h3>📊 Shipping Statistics</h3>
+                    <div class="stats-content">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalCount">0</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number shipped" id="shippedCount">0</div>
+                            <div class="stat-label">Shipped</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number pending" id="pendingCount">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- View All URLs Section -->
-                <div class="view-urls-section" id="viewUrlsSection">
+                <div class="view-urls-section" id="viewUrlsSection" style="display: none;">
                     <h3>📋 View All URLs</h3>
                     <p>Access the complete URL viewer to see all Google Drive links from your orders</p>
-                    <a href="/view-urls.html" target="_blank" class="view-urls-button" id="viewUrlsButton">
+                    <button class="view-urls-button" onclick="window.open('/view-urls.html', '_blank')">
                         📋 Open URL Viewer
-                    </a>
+                    </button>
                 </div>
 
-                <!-- Main Search Section - Compact for Left Column -->
-                <div class="search-section">
-                    <h2>🔍 Search by Tracking Number</h2>
-                    <p>Scan barcode or enter tracking number</p>
-                    <div class="search-box">
-                        <input type="text" id="trackingInput" class="search-input" 
-                               placeholder="Scan or enter tracking number..." 
-                               autocomplete="off">
-                        <button class="search-button" onclick="searchOrder()">Search</button>
+                <!-- Sort Options -->
+                <div class="sort-section" id="sortSection" style="display: none;">
+                    <h3>🔄 Sort Options</h3>
+                    <div class="sort-controls">
+                        <label class="radio-option">
+                            <input type="radio" name="sortBy" value="date" checked>
+                            <span>By Date (Oldest First)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sortBy" value="imageId">
+                            <span>By Image ID</span>
+                        </label>
                     </div>
-                    <div id="barcodeInfo" class="barcode-info">
-                        <strong>Barcode Processing:</strong> <span id="barcodeDetails"></span>
+                </div>
+
+                <!-- Filter Options -->
+                <div class="filter-section" id="filterSection" style="display: none;">
+                    <h3>🔍 Filter Options</h3>
+                    <div class="filter-controls">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="hideShipped">
+                            <span>Hide Shipped Items</span>
+                        </label>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Large Images and Results -->
+            <!-- Right Column: Compact Image Grid -->
             <div class="right-column">
-                <div id="resultsSection" class="results-section">
-                    <div style="text-align: center; color: #666; padding: 60px 20px;">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">📸</div>
-                        <h3 style="margin-bottom: 10px; color: #333;">Large Image Display</h3>
-                        <p>Upload a CSV file and search for a tracking number to see order images displayed here in large format.</p>
+                <div id="shippingGrid" class="shipping-grid">
+                    <div class="placeholder-message">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🚢</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Shipping Grid</h3>
+                        <p>Upload a CSV file to see orders displayed in a compact grid format. Click images to select and use LABEL buttons to ship items.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-        <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; font-weight: 500;">
-            MaddPrints v2.8.34 | <a href="/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🏠 Home</a> | <a href="/view-urls.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📋 View URLs</a> | <a href="/MaddInvoice/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">📊 Invoice Generator</a> | <a href="/MaddShip/" style="color: rgba(255, 255, 255, 0.8); text-decoration: none;">🚢 MaddShip</a>
+    <!-- Warning Modal -->
+    <div id="warningModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Shipping Warning</h3>
+                <span class="close-modal" onclick="closeWarningModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p><strong>Warning! Check to ensure you have not already shipped this item.</strong></p>
+                <div id="warningDetails"></div>
+                <p>Do you want to proceed to create the shipping label?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-button" onclick="closeWarningModal()">Cancel</button>
+                <button class="proceed-button" id="proceedButton">Proceed to Label</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Footer with Version Only -->
+    <footer style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6; margin-top: 40px;">
+        <div style="color: #999; font-size: 0.85rem;">
+            v2.8.34
         </div>
     </footer>
 
-    <script>
-        let csvData = [];
-
-        // File upload handling
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
-            document.getElementById('trackingInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchOrder();
-                }
-            });
-            
-            // Auto-focus on search input
-            document.getElementById('trackingInput').focus();
-            
-            // Show previous uploads on page load
-            showPreviousUploadsOnLoad();
-        });
-
-        // Toggle upload section
-        function toggleUpload() {
-            const content = document.getElementById('uploadContent');
-            const arrow = document.getElementById('uploadArrow');
-            
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                arrow.classList.remove('expanded');
-            } else {
-                content.classList.add('expanded');
-                arrow.classList.add('expanded');
-            }
-        }
-
-        // Smart barcode processing function
-        function processTrackingNumber(rawInput) {
-            const trimmedInput = rawInput.trim();
-            
-            // Rule 1: If starts with 1Z (UPS), always use full value
-            if (trimmedInput.startsWith('1Z')) {
-                return {
-                    processed: trimmedInput,
-                    action: 'kept_full',
-                    original: rawInput,
-                    removed: null
-                };
-            }
-            
-            // Rule 2: If very long (likely has prefix), remove first 8 digits
-            if (trimmedInput.length > 20) {
-                const processed = trimmedInput.substring(8);
-                const removed = trimmedInput.substring(0, 8);
-                return {
-                    processed: processed,
-                    action: 'removed_prefix',
-                    original: rawInput,
-                    removed: removed
-                };
-            }
-            
-            // Rule 3: Otherwise use as-is
-            return {
-                processed: trimmedInput,
-                action: 'kept_as_is',
-                original: rawInput,
-                removed: null
-            };
-        }
-
-        function showBarcodeInfo(processingResult) {
-            const barcodeInfo = document.getElementById('barcodeInfo');
-            const barcodeDetails = document.getElementById('barcodeDetails');
-            
-            if (processingResult.action === 'removed_prefix') {
-                barcodeDetails.innerHTML = `Removed prefix "${processingResult.removed}" from scanned barcode. Using: ${processingResult.processed}`;
-                barcodeInfo.classList.add('show');
-            } else if (processingResult.action === 'kept_full') {
-                barcodeDetails.innerHTML = `UPS tracking detected (1Z prefix) - using full scanned value: ${processingResult.processed}`;
-                barcodeInfo.classList.add('show');
-            } else {
-                barcodeInfo.classList.remove('show');
-            }
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const uploadStatus = document.getElementById('uploadStatus');
-            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing CSV file...</div>';
-
-            Papa.parse(file, {
-                header: true,
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                delimitersToGuess: [',', '\t', '|', ';'],
-                complete: function(results) {
-                    if (results.errors.length > 0) {
-                        uploadStatus.innerHTML = `<div class="error-message">Error parsing CSV: ${results.errors[0].message}</div>`;
-                        return;
-                    }
-
-                    // Clean headers by removing whitespace
-                    const cleanData = results.data.map(row => {
-                        const cleanRow = {};
-                        Object.keys(row).forEach(key => {
-                            const cleanKey = key.trim();
-                            cleanRow[cleanKey] = row[key];
-                        });
-                        return cleanRow;
-                    });
-
-                    csvData = cleanData;
-                    
-                    // Save uploaded file data with timestamp
-                    saveUploadedFile(file.name, cleanData);
-                    
-                    uploadStatus.innerHTML = `<div class="success-message">✅ Successfully loaded ${csvData.length} orders!</div>`;
-                    
-                    // Show stats and collapse upload section
-                    updateStats();
-                    document.getElementById('statsSection').style.display = 'block';
-                    
-                    // Auto-collapse upload section after successful upload
-                    const content = document.getElementById('uploadContent');
-                    const arrow = document.getElementById('uploadArrow');
-                    content.classList.remove('expanded');
-                    arrow.classList.remove('expanded');
-                    
-                    // Show "View All URLs" section and update button
-                    showViewAllUrlsSection();
-                    
-                    // Show previous uploads
-                    showPreviousUploads();
-                    
-                    // Focus back on search input
-                    document.getElementById('trackingInput').focus();
-                },
-                error: function(error) {
-                    uploadStatus.innerHTML = `<div class="error-message">Error reading file: ${error.message}</div>`;
-                }
-            });
-        }
-
-        function saveUploadedFile(fileName, data) {
-            const uploadData = {
-                fileName: fileName,
-                uploadDate: new Date().toISOString(),
-                data: data,
-                orderCount: data.length
-            };
-            
-            // Get existing uploads
-            const existingUploads = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
-            
-            // Add new upload to the beginning
-            existingUploads.unshift(uploadData);
-            
-            // Keep only last 10 uploads
-            if (existingUploads.length > 10) {
-                existingUploads.splice(10);
-            }
-            
-            // Save back to localStorage
-            localStorage.setItem('uploadedFiles', JSON.stringify(existingUploads));
-        }
-
-        function showPreviousUploads() {
-            const existingUploads = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
-            
-            if (existingUploads.length === 0) return;
-            
-            const uploadStatus = document.getElementById('uploadStatus');
-            const currentContent = uploadStatus.innerHTML;
-            
-            let uploadsHtml = `
-                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h4 style="margin-bottom: 15px; color: #495057; font-size: 0.9rem;">📁 Previous Uploads</h4>
-                    <div style="max-height: 150px; overflow-y: auto;">
-            `;
-            
-            existingUploads.forEach((upload, index) => {
-                const uploadDate = new Date(upload.uploadDate);
-                const formattedDate = uploadDate.toLocaleDateString() + ' ' + uploadDate.toLocaleTimeString();
-                
-                uploadsHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: white; border-radius: 5px; border: 1px solid #e9ecef;">
-                        <div>
-                            <strong style="font-size: 0.9rem;">${upload.fileName}</strong><br>
-                            <small style="color: #666; font-size: 0.8rem;">${formattedDate} • ${upload.orderCount} orders</small>
-                        </div>
-                        <button onclick="loadPreviousUpload(${index})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer;">
-                            📂 Load
-                        </button>
-                    </div>
-                `;
-            });
-            
-            uploadsHtml += `
-                    </div>
-                </div>
-            `;
-            
-            uploadStatus.innerHTML = currentContent + uploadsHtml;
-        }
-
-        function loadPreviousUpload(index) {
-            const existingUploads = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
-            const upload = existingUploads[index];
-            
-            if (!upload) return;
-            
-            csvData = upload.data;
-            
-            const uploadStatus = document.getElementById('uploadStatus');
-            uploadStatus.innerHTML = `<div class="success-message">✅ Loaded previous upload: ${upload.fileName} (${upload.orderCount} orders)</div>`;
-            
-            // Show stats and collapse upload section
-            updateStats();
-            document.getElementById('statsSection').style.display = 'block';
-            
-            // Auto-collapse upload section
-            const content = document.getElementById('uploadContent');
-            const arrow = document.getElementById('uploadArrow');
-            content.classList.remove('expanded');
-            arrow.classList.remove('expanded');
-            
-            // Show "View All URLs" section and update button
-            showViewAllUrlsSection();
-            
-            // Show previous uploads again
-            showPreviousUploads();
-            
-            // Focus back on search input
-            document.getElementById('trackingInput').focus();
-        }
-
-        function updateStats() {
-            const statsContent = document.getElementById('statsContent');
-            const totalOrders = csvData.length;
-            
-            // Count orders with Google Drive URLs
-            let ordersWithUrls = 0;
-            let totalUrls = 0;
-            
-            csvData.forEach(order => {
-                if (order.notes) {
-                    const urls = extractGoogleDriveUrls(order.notes);
-                    if (urls.length > 0) {
-                        ordersWithUrls++;
-                        totalUrls += urls.length;
-                    }
-                }
-            });
-
-            statsContent.innerHTML = `
-                <div class="stat-item">
-                    <div class="stat-number">${totalOrders}</div>
-                    <div class="stat-label">Total Orders</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">${ordersWithUrls}</div>
-                    <div class="stat-label">With Images</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">${totalUrls}</div>
-                    <div class="stat-label">Total Files</div>
-                </div>
-            `;
-        }
-
-        function showViewAllUrlsSection() {
-            // Extract all Google Drive URLs from CSV
-            const allUrls = [];
-            csvData.forEach(order => {
-                if (order.notes) {
-                    const urls = extractGoogleDriveUrls(order.notes);
-                    urls.forEach(url => {
-                        const firstName = order.shipping_address_first_name || '';
-                        const lastName = order.shipping_address_last_name || '';
-                        const fullName = `${firstName} ${lastName}`.trim();
-                        
-                        allUrls.push({
-                            trackingNumber: order.tracking_number || 'N/A',
-                            orderNumber: order.number || 'N/A',
-                            customerName: fullName || null,
-                            url: url,
-                            fileId: extractFileId(url)
-                        });
-                    });
-                }
-            });
-
-            if (allUrls.length > 0) {
-                // Store URLs in localStorage for the new page
-                localStorage.setItem('googleDriveUrls', JSON.stringify(allUrls));
-                
-                // Show the View URLs section and update button text
-                document.getElementById('viewUrlsSection').style.display = 'block';
-                document.getElementById('viewUrlsButton').textContent = `📋 Open URL Viewer (${allUrls.length} found)`;
-            }
-        }
-
-        function searchOrder() {
-            const rawInput = document.getElementById('trackingInput').value;
-            const resultsSection = document.getElementById('resultsSection');
-            
-            if (!rawInput.trim()) {
-                resultsSection.innerHTML = '<div class="error-message">Please enter a tracking number</div>';
-                return;
-            }
-
-            if (csvData.length === 0) {
-                resultsSection.innerHTML = '<div class="error-message">Please upload a CSV file first</div>';
-                return;
-            }
-
-            // Process the tracking number with smart barcode logic
-            const processingResult = processTrackingNumber(rawInput);
-            const trackingNumber = processingResult.processed;
-            
-            // Show barcode processing info
-            showBarcodeInfo(processingResult);
-            
-            // Clear the input field for next scan
-            document.getElementById('trackingInput').value = '';
-
-            // Search for the order
-            const order = csvData.find(row => {
-                const orderTracking = (row.tracking_number || '').toString().trim();
-                return orderTracking === trackingNumber;
-            });
-
-            if (!order) {
-                resultsSection.innerHTML = `
-                    <div class="error-message">
-                        ❌ No order found with tracking number: ${trackingNumber}
-                        ${processingResult.action === 'removed_prefix' ? 
-                            `<br><small>Original scanned: ${processingResult.original}</small>` : ''}
-                    </div>
-                `;
-                return;
-            }
-
-            // Extract Google Drive URLs from notes
-            const googleDriveUrls = extractGoogleDriveUrls(order.notes || '');
-            
-            // Get customer name
-            const firstName = order.shipping_address_first_name || '';
-            const lastName = order.shipping_address_last_name || '';
-            const fullName = `${firstName} ${lastName}`.trim();
-            
-            let html = `
-                <div class="order-card">
-                    <div class="order-header">
-                        <div>
-                            <div class="tracking-number">📦 ${order.tracking_number}</div>
-                            <div class="order-number">Order #${order.number || 'N/A'}</div>
-                            ${fullName ? `<div class="customer-name">👤 ${fullName}</div>` : ''}
-                        </div>
-                    </div>
-            `;
-
-            if (googleDriveUrls.length > 0) {
-                html += `
-                    <h4 style="color: #333; margin-bottom: 15px;">📸 Order Images (${googleDriveUrls.length} files)</h4>
-                    <div class="images-grid" id="imagesGrid_${order.tracking_number}">
-                `;
-                
-                googleDriveUrls.forEach((url, index) => {
-                    const fileId = extractFileId(url);
-                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                    html += `
-                        <div class="image-item" id="imageItem_${index}">
-                            <div style="font-weight: bold; margin-bottom: 10px;">File ${index + 1}</div>
-                            <div style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">
-                                ID: ${fileId}
-                            </div>
-                            <div style="margin-bottom: 15px;" class="image-preview-container">
-                                <div class="loading-thumbnail" style="width: 100%; height: 500px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd;">
-                                    <div style="text-align: center; color: #666;">
-                                        <div class="spinner" style="width: 20px; height: 20px; margin: 0 auto 10px;"></div>
-                                        Loading preview...
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <a href="${previewUrl}" target="_blank" class="image-link">👁️ Full Preview</a>
-                                <a href="${url}" target="_blank" class="image-link">🔗 Open</a>
-                                <a href="https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download" target="_blank" class="image-link" style="background: #28a745;">💾 Download</a>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `</div>`;
-                
-                // Load thumbnails after rendering
-                setTimeout(() => loadThumbnailsForOrder(order.tracking_number, order.number), 100);
-            } else {
-                html += `<div class="error-message">No Google Drive images found for this order</div>`;
-            }
-
-            html += `</div>`;
-            resultsSection.innerHTML = html;
-        }
-
-        function extractGoogleDriveUrls(notes) {
-            if (!notes) return [];
-            
-            // Regular expression to match Google Drive URLs
-            const driveUrlRegex = /https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/view\?usp=drive_link/g;
-            const matches = notes.match(driveUrlRegex);
-            
-            return matches || [];
-        }
-
-        function extractFileId(driveUrl) {
-            const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
-            return fileIdMatch ? fileIdMatch[1] : null;
-        }
-
-        // Check when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, app ready');
-            
-            // Show previous uploads on page load
-            showPreviousUploadsOnLoad();
-        });
-
-        function showPreviousUploadsOnLoad() {
-            const existingUploads = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
-            
-            if (existingUploads.length === 0) return;
-            
-            const uploadStatus = document.getElementById('uploadStatus');
-            
-            let uploadsHtml = `
-                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h4 style="margin-bottom: 15px; color: #495057; font-size: 0.9rem;">📁 Previous Uploads</h4>
-                    <p style="color: #666; margin-bottom: 15px; font-size: 0.8rem;">Load a previously uploaded CSV file to continue working</p>
-                    <div style="max-height: 150px; overflow-y: auto;">
-            `;
-            
-            existingUploads.forEach((upload, index) => {
-                const uploadDate = new Date(upload.uploadDate);
-                const formattedDate = uploadDate.toLocaleDateString() + ' ' + uploadDate.toLocaleTimeString();
-                
-                uploadsHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: white; border-radius: 5px; border: 1px solid #e9ecef;">
-                        <div>
-                            <strong style="font-size: 0.9rem;">${upload.fileName}</strong><br>
-                            <small style="color: #666; font-size: 0.8rem;">${formattedDate} • ${upload.orderCount} orders</small>
-                        </div>
-                        <button onclick="loadPreviousUpload(${index})" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer;">
-                            📂 Load
-                        </button>
-                    </div>
-                `;
-            });
-            
-            uploadsHtml += `
-                    </div>
-                </div>
-            `;
-            
-            uploadStatus.innerHTML = uploadsHtml;
-        }
-
-        // Load thumbnails for an order
-        async function loadThumbnailsForOrder(trackingNumber, orderNumber) {
-            try {
-                const response = await fetch(`/api/get-thumbnails?trackingNumber=${encodeURIComponent(trackingNumber)}&orderNumber=${encodeURIComponent(orderNumber)}`);
-                
-                if (!response.ok) {
-                    console.log('No thumbnails found, using Google Drive previews');
-                    fallbackToGoogleDrivePreviews(trackingNumber);
-                    return;
-                }
-
-                const data = await response.json();
-                
-                if (data.success && data.thumbnails.length > 0) {
-                    // Replace loading placeholders with our thumbnails
-                    const imagesGrid = document.getElementById(`imagesGrid_${trackingNumber}`);
-                    if (imagesGrid) {
-                        const imageItems = imagesGrid.querySelectorAll('.image-item');
-                        
-                        data.thumbnails.forEach((thumbnail, index) => {
-                            if (imageItems[index]) {
-                                const previewContainer = imageItems[index].querySelector('.image-preview-container');
-                                if (previewContainer) {
-                                    previewContainer.innerHTML = `
-                                        <img src="${thumbnail.url}" 
-                                             alt="Order thumbnail" 
-                                             style="width: 100%; height: 500px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd; background: white;"
-                                             onerror="this.parentElement.innerHTML='<div style=\\'width: 100%; height: 500px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd; color: #666;\\'>Preview not available</div>'">
-                                    `;
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    // No thumbnails found, fallback to Google Drive
-                    fallbackToGoogleDrivePreviews(trackingNumber);
-                }
-            } catch (error) {
-                console.error('Error loading thumbnails:', error);
-                fallbackToGoogleDrivePreviews(trackingNumber);
-            }
-        }
-
-        // Fallback to Google Drive previews when thumbnails aren't available
-        function fallbackToGoogleDrivePreviews(trackingNumber) {
-            const imagesGrid = document.getElementById(`imagesGrid_${trackingNumber}`);
-            if (imagesGrid) {
-                const imageItems = imagesGrid.querySelectorAll('.image-item');
-                
-                imageItems.forEach((item, index) => {
-                    const previewContainer = item.querySelector('.image-preview-container');
-                    if (previewContainer) {
-                        // Extract Google Drive file ID from the existing links
-                        const openLink = item.querySelector('a[href*="drive.google.com"]');
-                        if (openLink) {
-                            const fileId = extractFileId(openLink.href);
-                            const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                            
-                            previewContainer.innerHTML = `
-                                <iframe src="${previewUrl}" 
-                                        width="100%" 
-                                        height="500" 
-                                        frameborder="0" 
-                                        style="border-radius: 8px; border: 1px solid #ddd;">
-                                </iframe>
-                            `;
-                        } else {
-                            previewContainer.innerHTML = `
-                                <div style="width: 100%; height: 500px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #ddd; color: #666;">
-                                    Preview not available
-                                </div>
-                            `;
-                        }
-                    }
-                });
-            }
-        }
-    </script>
+    <script src="ship.js"></script>
 </body>
 </html>
