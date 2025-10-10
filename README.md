@@ -1,37 +1,97 @@
-# MaddPrints App Suite v2.7
+# MaddPrints App Suite v2.8.38
 
-A comprehensive web application suite for print business operations, featuring tracking number management, invoice generation, and duplicate detection.
+A comprehensive web application suite for print business operations, featuring shipping management, invoice generation, and quality control tools.
 
 ## 🚀 App Suite Overview
 
-The MaddPrints App Suite consists of four integrated modules:
+The MaddPrints App Suite consists of four integrated modules designed for efficient print shop operations:
 
-### 1. **Main App (Home)** - Tracking Number Image Matcher
-- Upload CSV files with tracking numbers and Google Drive URLs
-- Smart search by tracking number to find associated product images
-- Embedded Google Drive previews with download capabilities
-- File upload history with localStorage persistence
+### 1. **MaddShip** - Shipping Management System (Primary Application)
+**Home Page Application** - The main hub for daily shipping operations
 
-### 2. **View URLs** - Comprehensive File Manager
-- Display all Google Drive URLs from uploaded CSV files
-- Grid and List view modes with toggle functionality
-- Multi-select functionality with selective downloads
-- Ship date sorting (newest/oldest first)
+Complete order fulfillment system with visual order management, instant shipping status updates, and Veeqo integration.
+
+**Core Features:**
+- 🎨 **Dual View Modes**: Grid view for visual scanning, List view for detailed information
+- 📦 **Instant Ship/Unship**: No page refresh - updates happen immediately
+- 📅 **Shipped Date Tracking**: Automatic MM/DD date stamps on shipped orders
+- 🔍 **Barcode Scanner Support**: Real-time search with visual highlighting
+- 📊 **Live Statistics**: Total, Shipped, and Pending counts updated in real-time
+- 🎯 **Smart Consolidation**: Groups orders by customer automatically
+- 💾 **Persistent Storage**: Maintains shipping status and session data
+- 🔗 **Veeqo Integration**: One-click label creation
+- 📥 **Bulk Downloads**: Download all images per order with one click
+- ⚡ **No Page Refresh**: Cards update instantly when shipping/unshipping
+
+**Workflow:**
+1. Upload CSV with order data and Google Drive image URLs
+2. Choose Grid or List view for optimal scanning
+3. Scan/search tracking numbers to locate orders
+4. Click LABEL to ship (opens Veeqo + marks as shipped)
+5. Status updates instantly with shipped date
+6. Use UNSHIP button if needed to reverse
+
+**Technical Highlights:**
+- URL Cleaning: Automatically removes [@...] tags from URLs
+- URL Format Support: Both `drive_link` and `sharing` formats
+- Smart Image Loading: API thumbnails with iframe fallback
+- localStorage Persistence: Shipping status survives browser restarts
+- Session Restoration: Automatically loads last CSV on page refresh
+- Real-time Updates: updateCardShipStatus() for instant UI changes
+
+### 2. **Quick Check** - Tracking Number Image Matcher
+Quick lookup tool for finding product images by tracking number.
+
+**Features:**
+- Fast tracking number search
+- Embedded Google Drive previews
+- Download capabilities
+- File upload history
+
+### 3. **View URLs** - Comprehensive File Manager
+Advanced file management with bulk operations.
+
+**Features:**
+- Grid and List view modes
+- Multi-select functionality
+- Ship date sorting
 - Bulk download capabilities
+- Complete URL viewer
 
-### 3. **MaddInvoice** - Invoice Generator
-- Generate monthly invoices from production order data
-- Excel and CSV file support
-- Month-based filtering for 2025
-- Downloadable Excel reports
-- Order summary and detailed breakdowns
+### 4. **MaddInvoice** - Invoice Generator
+Monthly invoice generation from production order data.
 
-### 4. **Duplicator** - Package Duplicate Checker
-- Upload CSV files with tracking numbers
-- Smart barcode scanning with auto-submit functionality
-- Duplicate detection with customer name display
+**Core Features:**
+- 📊 **Monthly Invoicing**: Generate invoices by month for 2025
+- 📁 **Multi-Format Support**: Excel (.xlsx) and CSV files
+- 📄 **Professional Reports**: Downloadable Excel invoices
+- 💰 **Order Summaries**: Detailed breakdowns with totals
+- 🔄 **Real-time Processing**: Instant invoice generation
+- 📈 **Monthly Filtering**: Easy month selection
+
+**Workflow:**
+1. Upload Excel or CSV file with order data
+2. Select target month (2025)
+3. Click Generate Invoice
+4. Review summary and details
+5. Download Excel report
+
+**Data Requirements:**
+- `order_date`: Date of order
+- `order_number`: Unique order identifier
+- `customer_name`: Customer information
+- `amount`: Order amount
+- `status`: Order status (e.g., completed)
+
+### 5. **Duplicator** - Package Duplicate Checker
+Quality control tool for identifying duplicate or missing packages.
+
+**Features:**
+- Smart barcode scanning
+- Auto-submit functionality
+- Duplicate detection
 - Missing package identification
-- Real-time analysis with comprehensive reporting
+- Real-time analysis
 
 ## 🛠️ Technical Features
 

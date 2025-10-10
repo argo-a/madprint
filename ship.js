@@ -4,7 +4,7 @@ let selectedCard = null;
 let labelClickCount = {}; // Track clicks per order ID
 let sidebarCollapsed = false;
 let searchTerm = '';
-let currentGridMode = 'medium';
+let currentGridMode = 'small';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
