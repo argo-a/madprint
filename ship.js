@@ -293,6 +293,18 @@ function displayShippingGrid(orders) {
             });
         }
         
+        // Get shipped date if the order is shipped
+        let shippedDateHtml = '';
+        if (isShipped) {
+            const shippedInfo = shippedItems[consolidatedOrder.allOrderIds.find(id => shippedItems[id])];
+            if (shippedInfo && shippedInfo.timestamp) {
+                const shippedDate = new Date(shippedInfo.timestamp);
+                const month = String(shippedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(shippedDate.getDate()).padStart(2, '0');
+                shippedDateHtml = `<div class="card-shipped-date">📅 ${month}/${day}</div>`;
+            }
+        }
+        
         card.innerHTML = `
             <div class="card-image-container ${googleDriveUrls.length === 1 ? 'single-image' : 'multiple-images'}">
                 ${imageContainersHtml}
@@ -303,6 +315,7 @@ function displayShippingGrid(orders) {
                     <div class="card-customer">${customerName}</div>
                     <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
                     ${consolidatedOrder.allOrderIds.length > 1 ? `<div class="card-sub-orders">${consolidatedOrder.allOrderIds.length} sub-orders</div>` : ''}
+                    ${shippedDateHtml}
                     <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
                         ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
                     </div>
