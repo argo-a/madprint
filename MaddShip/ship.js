@@ -279,24 +279,26 @@ function displayShippingGrid(orders) {
             <div class="card-image-container ${googleDriveUrls.length === 1 ? 'single-image' : 'multiple-images'}">
                 ${imageContainersHtml}
             </div>
-            <div class="card-info">
-                <div class="card-order-number">Order #${consolidatedOrder.orderNumber}</div>
-                <div class="card-customer">${customerName}</div>
-                <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
-                ${consolidatedOrder.allOrderIds.length > 1 ? `<div class="card-sub-orders">${consolidatedOrder.allOrderIds.length} sub-orders</div>` : ''}
-                <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
-                    ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
+            <div class="card-content">
+                <div class="card-details">
+                    <div class="card-order-number">Order #${consolidatedOrder.orderNumber}</div>
+                    <div class="card-customer">${customerName}</div>
+                    <div class="card-images-count">${googleDriveUrls.length} image${googleDriveUrls.length > 1 ? 's' : ''}</div>
+                    ${consolidatedOrder.allOrderIds.length > 1 ? `<div class="card-sub-orders">${consolidatedOrder.allOrderIds.length} sub-orders</div>` : ''}
+                    <div class="card-status ${isShipped ? 'status-shipped' : 'status-pending'}">
+                        ${isShipped ? '✅ SHIPPED' : '📦 PENDING'}
+                    </div>
                 </div>
-            </div>
-            <div class="card-buttons">
-                <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleConsolidatedLabelClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
-                    ${isShipped ? 'SHIPPED' : 'LABEL'}
-                </button>
-                ${isShipped ? `
-                    <button class="unship-button" onclick="handleConsolidatedUnshipClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
-                        UNSHIP
+                <div class="card-actions">
+                    <button class="label-button ${isShipped ? 'shipped' : ''}" onclick="handleConsolidatedLabelClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
+                        ${isShipped ? 'SHIPPED' : 'LABEL'}
                     </button>
-                ` : ''}
+                    ${isShipped ? `
+                        <button class="unship-button" onclick="handleConsolidatedUnshipClick('${JSON.stringify(consolidatedOrder.allOrderIds).replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}', '${customerName.replace(/'/g, "\\'")}')">
+                            UNSHIP
+                        </button>
+                    ` : ''}
+                </div>
             </div>
         `;
         
@@ -1091,22 +1093,19 @@ function loadGridMode() {
     }
 }
 
-// Download All Images Function
-function downloadAllImages(allOrderIds, customerName) {
-    const orders = csvData.filter(order => allOrderIds.includes(order.id));
+// Download All Images Function - Fixed to use deduplicated URLs
+function downloadAllImages(deduplicatedUrls, customerName, orderNumber) {
     const allUrls = [];
     
-    orders.forEach(order => {
-        const urls = extractGoogleDriveUrls(order.notes || '');
-        urls.forEach(url => {
-            const fileId = extractFileId(url);
-            if (fileId) {
-                allUrls.push({
-                    url: `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`,
-                    filename: `${customerName}_${order.number || order.id}_${fileId}.jpg`
-                });
-            }
-        });
+    // Use the deduplicated URLs directly instead of re-extracting from CSV
+    deduplicatedUrls.forEach((url, index) => {
+        const fileId = extractFileId(url);
+        if (fileId) {
+            allUrls.push({
+                url: `https://drive.usercontent.google.com/u/3/uc?id=${fileId}&export=download`,
+                filename: `${customerName}_${orderNumber}_${index + 1}_${fileId}.jpg`
+            });
+        }
     });
     
     // Download each file with a small delay to avoid overwhelming the browser
@@ -1209,7 +1208,7 @@ displayShippingGrid = function(orders) {
                     </a>
                     ${index === 0 && googleDriveUrls.length > 1 ? `
                         <button class="download-all-btn" 
-                                onclick="downloadAllImages(${JSON.stringify(consolidatedOrder.allOrderIds)}, '${customerName.replace(/'/g, "\\'")}');"
+                                onclick="downloadAllImages(${JSON.stringify(googleDriveUrls)}, '${customerName.replace(/'/g, "\\'")}', '${consolidatedOrder.orderNumber}');"
                                 title="Download all ${googleDriveUrls.length} images">
                             📥 All
                         </button>
