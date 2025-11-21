@@ -280,7 +280,7 @@ function displayResults(results, selectedMonth, selectedYear) {
     results.lineItems.forEach(item => {
         tableHTML += `
             <tr>
-                <td>${item.orderNumber}</td>
+                <td><a href="https://app.veeqo.com/orders/${item.orderId}" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 500;">${item.orderNumber}</a></td>
                 <td>${item.simplifiedShipDate}</td>
                 <td>${item.qty}</td>
                 <td>$${item.unitCost.toFixed(2)}</td>
